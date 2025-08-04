@@ -1,5 +1,6 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
+from dependencies.mod_depends import AccountService, get_account_service
 from domain.digipos.sch_paketdata import (
     DigiposReqBuyPaketData,
     DigiposReqListPaketData,
@@ -15,7 +16,10 @@ async def get_digipos():
 
 
 @router.post("/listpaket", response_model=DigiposResponse)
-async def list_paket(req: DigiposReqListPaketData):
+async def list_paket(
+    req: DigiposReqListPaketData,
+    account_service: AccountService = Depends(get_account_service),
+):
     # Dummy response, replace with actual logic
     return DigiposResponse(
         req=req.model_dump(),
