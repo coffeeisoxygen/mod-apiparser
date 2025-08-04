@@ -4,6 +4,7 @@ from typing import Any
 from pydantic import Field, PositiveInt, model_validator
 
 from domain.digipos.sch_validations import (
+    BothPaymentValid,
     LinkajaOnlyPaymentMethod,
     MarkUpIsZeroOrMore,
     PaymentMethodEnum,
@@ -46,7 +47,7 @@ class DigiposReqBuyPulsa(BaseDomainRequest, DigiposOptionalCheck):
         examples=[PulsaPackageCategoryEnum.FIX, PulsaPackageCategoryEnum.BULK],
     )
 
-    payment_method: PaymentMethodEnum = Field(
+    payment_method: BothPaymentValid = Field(
         description="Metode pembayaran yang digunakan, seperti LINKAJA atau NGRS.",
         examples=[PaymentMethodEnum.LINKAJA, PaymentMethodEnum.NGRS],
     )

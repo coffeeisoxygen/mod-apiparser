@@ -4,13 +4,18 @@ from typing import Any
 
 from pydantic import Field, field_validator
 
-from domain.digipos.sch_validations import MarkUpIsZeroOrMore, PaymentMethodEnum
+from domain.digipos.sch_paketdata import PackageCategoryEnum
+from domain.digipos.sch_validations import (
+    BothPaymentValid,
+    MarkUpIsZeroOrMore,
+    PaymentMethodEnum,
+)
 from src.domain.digipos.sch_pulsa import DigiposOptionalCheck
 from src.shared.base_schemas import BaseDomainRequest, BaseDomainResponse
 
 
 class DigiposBaseVoucherRequest(BaseDomainRequest):
-    payment_method: PaymentMethodEnum = Field(
+    payment_method: BothPaymentValid = Field(
         default=PaymentMethodEnum.LINKAJA,
         description="Metode pembayaran yang digunakan.",
         examples=[PaymentMethodEnum.LINKAJA, PaymentMethodEnum.NGRS],
@@ -25,16 +30,16 @@ class DigiposBaseVoucherRequest(BaseDomainRequest):
 class DigiposReqListVoucher(DigiposBaseVoucherRequest):
     """Schemas untuk melihat List Voucher yang tersedia."""
 
-    category: str = Field(
-        default="VF",
+    category: PackageCategoryEnum = Field(
+        default=PackageCategoryEnum.VF,
         description="Kategori voucher yang ingin dilihat, defaultnya VF (Voucher Fisik).",
-        examples=["VF", "BYU"],
+        examples=[PackageCategoryEnum.VF, PackageCategoryEnum.BYU],
     )
 
     @field_validator("category")
     @classmethod
-    def validate_category(cls, v: str) -> str:
-        if v != "VF":
+    def validate_category(cls, v: PackageCategoryEnum) -> PackageCategoryEnum:
+        if v != PackageCategoryEnum.VF:
             raise ValueError("category hanya boleh bernilai 'VF'")
         return v
 

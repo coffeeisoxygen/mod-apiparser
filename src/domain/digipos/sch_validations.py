@@ -4,6 +4,7 @@ from typing import Annotated
 from pydantic import BeforeValidator, Field
 
 
+# =======================Khusus Payment Method=======================
 class PaymentMethodEnum(StrEnum):
     """payment method yang boleh user pilih di request."""
 
@@ -23,7 +24,19 @@ LinkajaOnlyPaymentMethod = Annotated[
 ]
 
 
-def Validate_both_paymentvalid(v: PaymentMethodEnum) -> PaymentMethodEnum:
+def validate_ngrs_only(v: PaymentMethodEnum) -> PaymentMethodEnum:
+    """Memastikan metode pembayaran hanya NGRS."""
+    if v == PaymentMethodEnum.LINKAJA:
+        raise ValueError("Pembelian Ini Hanya Bisa Dengan Methode NGRS")
+    return v
+
+
+NGRSOnlyPaymentMethod = Annotated[
+    PaymentMethodEnum, BeforeValidator(validate_ngrs_only)
+]
+
+
+def validate_both_payment_valid(v: PaymentMethodEnum) -> PaymentMethodEnum:
     """Pembayaran boleh yang mana aja."""
     """Memastikan metode pembayaran valid untuk kedua kategori."""
     if v not in (PaymentMethodEnum.LINKAJA, PaymentMethodEnum.NGRS):
@@ -32,8 +45,10 @@ def Validate_both_paymentvalid(v: PaymentMethodEnum) -> PaymentMethodEnum:
 
 
 BothPaymentValid = Annotated[
-    PaymentMethodEnum, BeforeValidator(Validate_both_paymentvalid)
+    PaymentMethodEnum, BeforeValidator(validate_both_payment_valid)
 ]
+
+# =====================
 
 
 def validate_param_check(v: int) -> int:
