@@ -1,0 +1,57 @@
+[request]
+method = "GET"
+timeout = 10
+max_retries = 3
+seconds_between_retries = 3
+
+
+[response]
+min_inbound_characters = 7000
+
+[[responses.items]]
+type = "digipos"
+list_regex_replacement = ["\\b(DAYS?|HARI)\\b", "(\\d+)\\s*GB"]
+list_product_prefixes = ["Facebook", "Instagram"]
+
+[[responses.items]]
+type = "isimple"
+list_regex_replacement = ["your_regex_here"]
+list_product_prefixes = ["your_prefix_here"]
+
+[accounts]
+default_account = "digipos"
+
+[[accounts.accounts]]
+type = "digipos"
+base_url = "http://10.0.0.1:10001/"
+username = "accounts-1"
+password = "your_password_here"
+pin = "your_pin_here"
+msisdn = "your_msisdn_here"
+is_aktif = true
+
+[[accounts.accounts]]
+type = "digipos"
+base_url = "http://10.0.0.1:10002/"
+username = "accounts-2"
+password = "your_password_here"
+pin = "your_pin_here"
+msisdn = "your_msisdn_here"
+is_aktif = false
+
+[[accounts.accounts]]
+type = "isimple"
+base_url = "http://10.0.0.1:10003/"
+username = "accounts-3"
+password = "your_password_here"
+pin = "your_pin_here"
+msisdn = "your_msisdn_here"
+is_aktif = true
+
+[[accounts.accounts]]
+type = "isimple"
+username = "accounts-4"
+password = "your_password_here"
+pin = "your_pin_here"
+msisdn = "your_msisdn_here"
+is_aktif = true
