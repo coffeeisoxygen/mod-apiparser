@@ -19,7 +19,7 @@ class ResponseService:
                 return item
         return None
 
-    def get_global_response_config(self) -> ResponseConfig:
+    def get_response_config(self) -> ResponseConfig:
         """Retrieve the global response configuration.
 
         Returns:
