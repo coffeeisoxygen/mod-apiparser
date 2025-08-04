@@ -1,33 +1,51 @@
 from fastapi import APIRouter
 
+from domain.digipos.sch_paketdata import (
+    DigiposReqBuyPaketData,
+    DigiposReqListPaketData,
+    DigiposResponse,
+)
+
 router = APIRouter()
 
 
-@router.get("/digipos")
+@router.get("/")
 async def get_digipos():
     return {"message": "Hello from /digipos"}
 
 
-@router.get("/digipos/listpaket")
-async def list_paket():
-    return {"message": "Placeholder for /digipos/listpaket"}
+@router.post("/listpaket", response_model=DigiposResponse)
+async def list_paket(req: DigiposReqListPaketData):
+    # Dummy response, replace with actual logic
+    return DigiposResponse(
+        req=req.model_dump(),
+        resp=None,
+        paket=[
+            {
+                "productId": "123",
+                "productName": "Paket Data 10GB",
+                "quota": "10GB",
+                "total_": 50000,
+            }
+        ],
+    )
 
 
-@router.post("/digipos/belipaket")
-async def beli_paket():
-    return {"message": "Placeholder for /digipos/belipaket"}
+@router.post("/belipaket", response_model=DigiposResponse)
+async def beli_paket(req: DigiposReqBuyPaketData):
+    return {"message": "Placeholder for /belipaket"}
 
 
-@router.get("/digipos/caripaket")
+@router.get("/caripaket", response_model=DigiposResponse)
 async def cari_paket():
-    return {"message": "Placeholder for /digipos/caripaket"}
+    return {"message": "Placeholder for /caripaket"}
 
 
-@router.get("/digipos/listomni")
+@router.get("/listomni", response_model=DigiposResponse)
 async def list_omni():
-    return {"message": "Placeholder for /digipos/listomni"}
+    return {"message": "Placeholder for /listomni"}
 
 
-@router.post("/digipos/beliomni")
+@router.post("/beliomni")
 async def beli_omni():
     return {"message": "Placeholder for /digipos/beliomni"}
