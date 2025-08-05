@@ -192,9 +192,7 @@ class LoggerManager:
         if self.config.exception_hooks:
             logger.opt(exception=True)
 
-        # Bind context if provided
-        if self.config.bind_context:
-            logger.bind(**self.config.bind_context)
+        # Note: bind_context is applied per logger instance in get_logger()
 
     def shutdown(self) -> None:
         """Clean shutdown of all handlers."""
@@ -211,9 +209,18 @@ class LoggerManager:
         if not self._is_setup:
             self.setup()
 
+        # Create logger with bound context
+        bound_logger = logger
+
+        # Apply global bind context if configured
+        if self.config.bind_context:
+            bound_logger = bound_logger.bind(**self.config.bind_context)
+
+        # Add logger name if provided
         if name:
-            return logger.bind(logger_name=name)
-        return logger
+            bound_logger = bound_logger.bind(logger_name=name)
+
+        return bound_logger
 
     @classmethod
     def from_toml(cls, config_path: str | Path = "log_config.toml") -> "LoggerManager":

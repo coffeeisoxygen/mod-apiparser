@@ -12,14 +12,14 @@ async def test_lifespan():
     # Startup
     logger = get_logger(__name__)
     logger.info("Test application starting up")
-    
+
     # Simulate some work
     logger.info("Application is running...")
     logger.debug("Debug message during runtime")
     logger.warning("Warning message during runtime")
-    
+
     yield
-    
+
     # Shutdown
     logger.info("Test application shutting down")
     shutdown_logging()
@@ -33,7 +33,7 @@ async def main():
         logger = get_logger("test_runtime")
         logger.info("Application is processing requests...")
         await asyncio.sleep(0.1)  # Simulate some async work
-        
+
     print("✓ Test completed - check logs for shutdown message")
 
 

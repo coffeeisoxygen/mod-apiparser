@@ -37,10 +37,10 @@ warning = false # Skip app_warning.log (set to true for warning-only files)
 
 [mlog.formatters]
 # Custom format templates for different outputs
-simple = "<level>{level.name}</level>: <magenta>{name}:{function}:{line}</magenta> | {message}"
+simple = "<level>{level.name}</level>: <magenta>{name}:{function}:{line}</magenta> | {message} | {extra}"
 full = "<level>{level.name}</level>: {time:YYYY-MM-DD HH:mm:ss} | <cyan>{process.name}:{thread.name}</cyan> | <magenta>{name}:{function}:{line}</magenta> | <level>{message}</level> | {extra}"
 minimal = "{level.name}: {message}"
-json = '{"timestamp": "{time:YYYY-MM-DD HH:mm:ss}", "level": "{level.name}", "message": "{message}", "module": "{name}", "function": "{function}", "line": {line}}'
+json = '{"timestamp": "{time:YYYY-MM-DD HH:mm:ss}", "level": "{level.name}", "message": "{message}", "module": "{name}", "function": "{function}", "line": {line}, "extra": "{extra}"}'
 
 [mlog.filters]
 # Content filtering and redaction
