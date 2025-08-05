@@ -64,10 +64,27 @@ def main():
         )
         pbar_generate_keys()
         fernet_key, secret_key = generating_keys()
-        decrypt_key = fernet_key
-        secret_key = secret_key
         typer.echo(f"Fernet Key: {fernet_key}")
         typer.echo(f"Secret Key: {secret_key}")
+        debug = typer.confirm("Aktifkan debug mode?", default=True)
+
+        # Compose .env content
+        env_content = f"""APP_DEBUG={debug}
+APP_ENV=\"production\"
+APP_DECRYPT_KEY=\"{fernet_key}\"
+APP_SECRET_KEY=\"{secret_key}\"
+ADMIN_USER=\"{useradmin}\"
+ADMIN_PASSWORD=\"{userpassword}\"
+UVICORN_HOST=\"{DEFAULT_UVICORN_CONFIG["host"]}\"
+UVICORN_PORT={DEFAULT_UVICORN_CONFIG["port"]}
+UVICORN_RELOAD={DEFAULT_UVICORN_CONFIG["reload"]}
+UVICORN_LOG_LEVEL=\"{DEFAULT_UVICORN_CONFIG["log_level"]}\"
+UVICORN_TIMEOUT_KEEP_ALIVE={DEFAULT_UVICORN_CONFIG["timeout_keep_alive"]}
+UVICORN_TIMEOUT_GRACEFUL_SHUTDOWN={DEFAULT_UVICORN_CONFIG["timeout_graceful_shutdown"]}
+"""
+        with ENV_PATH.open("w") as f:
+            f.write(env_content)
+        typer.secho(f"File {ENV_PATH} berhasil dibuat!", fg=typer.colors.GREEN)
     else:
         typer.echo(f"File {ENV_PATH} sudah ada, tidak perlu membuat baru.")
 

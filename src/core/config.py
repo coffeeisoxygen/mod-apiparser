@@ -37,6 +37,31 @@ class KeysSettings(BaseSettings):
     )
 
 
+class AdminSettings(BaseSettings):
+    """Settings related to the admin user."""
+
+    username: str = Field(..., alias="APP_ADMIN_USERNAME")
+    password: str = Field(..., alias="APP_ADMIN_PASSWORD")
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
+
+
+class HashSettings(BaseSettings):
+    """Settings related to hashing algorithm."""
+
+    algorithm: str = Field(..., alias="APP_HASH_ALGORITHM")
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
+
+
 class Config(BaseSettings):
     """Core configuration settings for the application."""
 
@@ -55,3 +80,5 @@ class Config(BaseSettings):
 
     server: ServerSettings = ServerSettings()  # type: ignore
     key: KeysSettings = KeysSettings()  # type: ignore
+    admin: AdminSettings = AdminSettings()  # type: ignore
+    hash: HashSettings = HashSettings()  # type: ignore
