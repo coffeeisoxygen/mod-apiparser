@@ -1,5 +1,6 @@
 """core configuration Module Will Use Pydantic-settings for configuration management."""
 
+# TODO: in APP_ENV = production & APP_DEBUG = false , its mean the reload must be false and workers uses cpu count
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 

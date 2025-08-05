@@ -16,7 +16,11 @@ IF %ERRORLEVEL% NEQ 0 (
 )
 
 REM Step 2: Run env_checker (always run)
-uv run scripts/env_checker.py
+uv run scripts/env_input.py
+IF %ERRORLEVEL% NEQ 0 (
+    echo [!] env_checker.py failed.
+    exit /b %ERRORLEVEL%
+)
 
 REM Step 3: Jalankan FastAPI
-uvicorn src.main:app --reload --host=0.0.0.0 --port=8000
+uv run uvicorn main:app --host 0.0.0.0 --port 8000 --workers 4
