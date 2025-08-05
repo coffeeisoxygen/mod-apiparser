@@ -24,7 +24,7 @@ class ServerSettings(BaseSettings):
     )
 
 
-class AppSettings(BaseSettings):
+class KeysSettings(BaseSettings):
     """Settings related to the application secrets."""
 
     decrypt_key: str = Field(..., alias="APP_DECRYPT_KEY")
@@ -54,4 +54,4 @@ class Config(BaseSettings):
     environment: str = "development"
 
     server: ServerSettings = ServerSettings()  # type: ignore
-    app: AppSettings = AppSettings()  # type: ignore
+    key: KeysSettings = KeysSettings()  # type: ignore

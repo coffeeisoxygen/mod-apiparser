@@ -1,28 +1,26 @@
 # account_cli.py
 import asyncio
-import sys
 from pathlib import Path
-from typing import Optional
 
 import typer
-import yaml
 from rich.console import Console
-from rich.prompt import Prompt, Confirm
+from rich.prompt import Confirm, Prompt
 from rich.table import Table
 
-from .sch_account import AccountCreate, AccountList, EnumAPIProvider
 from services.crypto_service import CryptoService
 from src.accounts.account_service import AccountFileService
+from src.accounts.sch_account import AccountCreate, EnumAPIProvider
 
 console = Console()
 app = typer.Typer(rich_markup_mode="rich")
+
 
 class AsyncCLI:
     def __init__(self):
         self.crypto_service = CryptoService()
         self.account_service = AccountFileService(self.crypto_service)
 
-    async def interactive_create_account(self) -> Optional[AccountCreate]:
+    async def interactive_create_account(self) -> AccountCreate | None:
         """Interactive account creation dengan pydantic validation"""
         console.print("[bold blue]Creating New Account[/bold blue]")
 
@@ -45,7 +43,9 @@ class AsyncCLI:
 
             # Optional fields
             name = Prompt.ask("Name (optional)", default=None, show_default=False)
-            description = Prompt.ask("Description (optional)", default=None, show_default=False)
+            description = Prompt.ask(
+                "Description (optional)", default=None, show_default=False
+            )
 
             # Create and validate dengan pydantic
             account_data = AccountCreate(
@@ -59,7 +59,7 @@ class AsyncCLI:
                 provider=EnumAPIProvider(provider),
                 is_active=is_active,
                 name=name if name else None,
-                description=description if description else None
+                description=description if description else None,
             )
 
             console.print("[green]✓ Account data validated successfully![/green]")
@@ -96,16 +96,20 @@ class AsyncCLI:
         # Save encrypted accounts
         success = await self.account_service.save_accounts(accounts, accounts_path)
         if success:
-            console.print(f"[green]✓ Created accounts.yaml with {len(accounts)} accounts[/green]")
+            console.print(
+                f"[green]✓ Created accounts.yaml with {len(accounts)} accounts[/green]"
+            )
             return True
         else:
             console.print("[red]❌ Failed to save accounts[/red]")
             return False
 
+
 # CLI Commands
 @app.command()
 def init():
     """Initialize accounts.yaml configuration"""
+
     async def _init():
         cli = AsyncCLI()
         success = await cli.create_initial_config()
@@ -114,9 +118,11 @@ def init():
 
     asyncio.run(_init())
 
+
 @app.command()
 def list_accounts():
     """List all accounts"""
+
     async def _list():
         cli = AsyncCLI()
         accounts = await cli.account_service.load_accounts(Path("accounts.yaml"))
@@ -134,15 +140,13 @@ def list_accounts():
         for account in accounts:
             status = "✓ Active" if account.is_active else "✗ Inactive"
             table.add_row(
-                account.accountid,
-                account.provider.value,
-                status,
-                account.name or "N/A"
+                account.accountid, account.provider.value, status, account.name or "N/A"
             )
 
         console.print(table)
 
     asyncio.run(_list())
+
 
 if __name__ == "__main__":
     app()
