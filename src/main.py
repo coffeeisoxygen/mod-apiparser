@@ -1,25 +1,12 @@
 import uvicorn
 from fastapi import FastAPI
 
-from config import ServerConfig, lifespan, setup_middlewares
 from src._version import version
-from utils.mlogger import LogConfig, LogFormatters, LoggerManager, logger
+from src.config import ServerConfig, lifespan, setup_middlewares
+from src.mlogger import get_logger
 
-# Contoh: terminal simple, file full
-log_config = LogConfig(
-    level="DEBUG",
-    to_file=True,
-    to_terminal=True,
-    diagnose=True,
-    enqueue=True,
-    formatter_terminal=LogFormatters.simple,
-    formatter_file=LogFormatters.full,
-    log_path="logs",
-    name_prefix="app",
-)
-
-LoggerManager(log_config).setup()
-logger.debug("Logger initialized with config", log_config=log_config)
+# Get logger (setup will happen in lifespan)
+logger = get_logger(__name__)
 
 
 app = FastAPI(
@@ -47,7 +34,7 @@ if __name__ == "__main__":
         reload=uvc_config["reload"],
         workers=uvc_config["workers"],
         log_level=uvc_config["log_level"],
-    ).info("Starting Uvicorn server with config")
+    ).info(f"Starting Uvicorn server with config: {uvc_config}")
     uvicorn.run(
         app="main:app",
         host=uvc_config["host"],
@@ -59,6 +46,6 @@ if __name__ == "__main__":
         timeout_graceful_shutdown=uvc_config["timeout_graceful_shutdown"],
     )
 else:
-    logger.bind(server="uvicorn").debug(
+    logger.bind(server="uvicorn").info(
         "Not running in main block, use 'uvicorn main:app' to start"
     )

@@ -1,47 +1,75 @@
-# Log Configuration for mod-apiparser
-# This file contains logging configuration settings
-# If any setting is missing, default values will be used
+# Advanced Log Configuration for mod-apiparser
+# Modular configuration with separated terminal and file handlers
+# This structure allows for granular control and future extensibility
 
-[logging]
-# Log level: TRACE, DEBUG, INFO, SUCCESS, WARNING, ERROR, CRITICAL
+[mlog]
+# Global logging settings
 level = "INFO"
+intercept = true  # Intercept standard library logging (uvicorn, etc.)
+exception_hooks = true  # Enable global exception hooks
 
-# Enable/disable terminal logging
-to_terminal = true
+[mlog.terminal]
+# Terminal/console output configuration
+enabled = true
+level = "INFO"  # Can be different from global level
+format = "simple"  # Options: simple, full, minimal, custom
+colorize = true  # Enable colors in terminal
+diagnose = false  # Enable detailed diagnosis for terminal
+enqueue = true  # Async logging for better performance
 
-# Enable/disable file logging
-to_file = true
+[mlog.file]
+# File logging configuration
+enabled = true
+base_path = "logs"  # Base directory for all log files
+name_prefix = "app"  # Prefix for log filenames
+rotation_mb = 10  # Rotate when file reaches this size in MB
+retention_days = 7  # Keep log files for this many days
+enqueue = true  # Async file writing
+diagnose = false  # Detailed diagnosis in files (can be large)
 
-# Enable detailed diagnosis (useful for debugging)
-diagnose = false
+# Multiple file handlers based on log levels
+[mlog.file.levels]
+# Enable/disable specific level-based log files
+info = true     # Create app_info.log for INFO+ messages
+error = true    # Create app_error.log for ERROR+ messages
+debug = false   # Skip app_debug.log (set to true for debug files)
+warning = false # Skip app_warning.log (set to true for warning-only files)
 
-# Enable asynchronous logging (recommended for performance)
-enqueue = true
+[mlog.formatters]
+# Custom format templates for different outputs
+simple = "<level>{level.name}</level>: <magenta>{name}:{function}:{line}</magenta> | {message}"
+full = "<level>{level.name}</level>: {time:YYYY-MM-DD HH:mm:ss} | <cyan>{process.name}:{thread.name}</cyan> | <magenta>{name}:{function}:{line}</magenta> | <level>{message}</level> | {extra}"
+minimal = "{level.name}: {message}"
+json = '{"timestamp": "{time:YYYY-MM-DD HH:mm:ss}", "level": "{level.name}", "message": "{message}", "module": "{name}", "function": "{function}", "line": {line}}'
 
-# Directory for log files
-log_path = "logs"
+[mlog.filters]
+# Content filtering and redaction
+sensitive_keywords = ["password", "token", "secret", "apikey", "authorization", "jwt"]
+redact_replacement = "[REDACTED]"
 
-# Prefix for log file names
-name_prefix = "app"
+# Module-based filtering (future extensibility)
+# exclude_modules = ["urllib3.connectionpool", "requests.packages"]
+# include_only = ["src", "app"]
 
-# Maximum size per log file in MB before rotation
-size_mb = 10
+[mlog.bind_context]
+# Default context attached to all log messages
+service = "mod-apiparser"
+version = "1.0.0"
+environment = "development"
 
-# Number of days to retain log files
-retention_days = 7
-
-# Override stdout/stderr to redirect to logger
-override_stdout = false
-
-# Enable global exception hooks for unhandled exceptions
-enable_exception_hooks = true
-
-# Intercept standard library logging (uvicorn, etc.)
-intercept = true
-
-# Optional: Bind context to all log messages
-[logging.bind_context]
-# Uncomment to add default context to all logs
-# service = "mod-apiparser"
-# version = "1.0.0"
-# environment = "development"
+# Advanced features (commented out, ready for future use)
+# [mlog.sampling]
+# # Log sampling for high-traffic scenarios
+# rate = 1.0  # 1.0 = log everything, 0.1 = log 10% of messages
+#
+# [mlog.webhook]
+# # Send critical logs to external systems
+# enabled = false
+# url = "https://hooks.slack.com/services/YOUR/WEBHOOK/URL"
+# level = "ERROR"
+#
+# [mlog.metrics]
+# # Performance monitoring
+# enabled = false
+# track_performance = true
+# alert_on_errors = true
