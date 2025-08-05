@@ -5,6 +5,7 @@ sophisticated Loguru setup using the configuration from config.py.
 """
 
 import contextlib
+import os
 import sys
 import warnings
 from collections.abc import Callable
@@ -232,11 +233,22 @@ class LoggerManager:
 # Global logger manager instance
 _global_manager: LoggerManager | None = None
 _setup_lock = False
+_current_process_id = None
 
 
 def get_logger_manager() -> LoggerManager:
     """Get or create global logger manager instance."""
-    global _global_manager
+    global _global_manager, _current_process_id
+
+    # Check if we're in a new process
+    current_pid = os.getpid()
+    if _current_process_id != current_pid:
+        # Reset for new process
+        _global_manager = None
+        _current_process_id = current_pid
+        global _setup_lock
+        _setup_lock = False
+
     if _global_manager is None:
         # Auto-setup on first access
         setup_logging_from_toml()
@@ -250,7 +262,13 @@ def get_logger_manager() -> LoggerManager:
 
 def setup_logging_from_toml(config_path: str | Path = "log_config.toml") -> None:
     """Setup logging system from TOML configuration file."""
-    global _global_manager, _setup_lock
+    global _global_manager, _setup_lock, _current_process_id
+
+    # Check if we're in a new process
+    current_pid = os.getpid()
+    if _current_process_id != current_pid:
+        _setup_lock = False
+        _current_process_id = current_pid
 
     # Prevent multiple setups in the same process
     if _setup_lock:

@@ -2,11 +2,11 @@ import uvicorn
 from fastapi import FastAPI
 
 from src._version import version
-from src.config import ServerConfig, lifespan, setup_middlewares
-from src.mlogger import get_logger
+from src.config import lifespan, setup_middlewares
+from src.core.config import ServerSettings  # updated import
+from src.mlogger import logger
 
 # Get logger (setup will happen in lifespan)
-logger = get_logger(__name__)
 
 
 app = FastAPI(
@@ -22,11 +22,12 @@ setup_middlewares(app)
 
 @app.get("/")
 async def root():
+    """Root endpoint for health check."""
     return {"message": "OK"}
 
 
 if __name__ == "__main__":
-    uvc_config = ServerConfig().get_config()
+    uvc_config = ServerSettings().model_dump()  # type: ignore
     logger.bind(
         server="uvicorn",
         host=uvc_config["host"],

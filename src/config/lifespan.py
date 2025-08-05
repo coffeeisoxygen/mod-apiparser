@@ -7,12 +7,11 @@ from src.mlogger import get_logger, shutdown_logging
 
 @asynccontextmanager
 async def lifespan(app):  # noqa: ANN001, ARG001, D103, RUF029
-    # Get logger (setup happens automatically on first call)
-    logger = get_logger(__name__)
+    lifespan_logging = get_logger("lifespan")
 
-    logger.info("app is starting")
+    lifespan_logging.info("app is starting")
     yield
-    logger.info("app stopped")
+    lifespan_logging.info("app stopped")
 
     # Properly shutdown logging system
     shutdown_logging()

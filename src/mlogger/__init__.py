@@ -16,6 +16,7 @@ Example:
 
 # Core functionality
 # Configuration classes
+
 from src.mlogger.config import (
     FileConfig,
     FileLevelsConfig,
@@ -46,6 +47,12 @@ from src.mlogger.utils import (
 __version__ = "2.0.0"
 __author__ = "Maki & ChatGPT"
 
+# Ensure logging is set up on import (optional, or call setup explicitly elsewhere)
+setup_logging_from_toml()
+
+# Expose the global logger
+logger = get_logger()  # This will include bind_context and default context
+
 __all__ = [
     "FileConfig",
     "FileLevelsConfig",
@@ -66,3 +73,7 @@ __all__ = [
     "shutdown_logging",
     "validate_log_level",
 ]
+
+# from src.mlogger import get_logger
+# mylog = get_logger("custom_name")
+# mylog.info("With custom logger_name")
