@@ -1,0 +1,47 @@
+# Log Configuration for mod-apiparser
+# This file contains logging configuration settings
+# If any setting is missing, default values will be used
+
+[logging]
+# Log level: TRACE, DEBUG, INFO, SUCCESS, WARNING, ERROR, CRITICAL
+level = "INFO"
+
+# Enable/disable terminal logging
+to_terminal = true
+
+# Enable/disable file logging
+to_file = true
+
+# Enable detailed diagnosis (useful for debugging)
+diagnose = false
+
+# Enable asynchronous logging (recommended for performance)
+enqueue = true
+
+# Directory for log files
+log_path = "logs"
+
+# Prefix for log file names
+name_prefix = "app"
+
+# Maximum size per log file in MB before rotation
+size_mb = 10
+
+# Number of days to retain log files
+retention_days = 7
+
+# Override stdout/stderr to redirect to logger
+override_stdout = false
+
+# Enable global exception hooks for unhandled exceptions
+enable_exception_hooks = true
+
+# Intercept standard library logging (uvicorn, etc.)
+intercept = true
+
+# Optional: Bind context to all log messages
+[logging.bind_context]
+# Uncomment to add default context to all logs
+# service = "mod-apiparser"
+# version = "1.0.0"
+# environment = "development"

@@ -1,18 +1,21 @@
 import uvicorn
 from fastapi import FastAPI
 
-from config import ServerConfig, api_router, lifespan, setup_middlewares
+from config import ServerConfig, lifespan, setup_middlewares
 from src._version import version
-from utils.mlogger import LogConfig, LoggerManager, logger
+from utils.mlogger import LogConfig, LogFormatters, LoggerManager, logger
 
+# Contoh: terminal simple, file full
 log_config = LogConfig(
     level="DEBUG",
-    to_file=False,
+    to_file=True,
     to_terminal=True,
-    serialize=False,
     diagnose=True,
     enqueue=True,
-    format_style="simple",
+    formatter_terminal=LogFormatters.simple,
+    formatter_file=LogFormatters.full,
+    log_path="logs",
+    name_prefix="app",
 )
 
 LoggerManager(log_config).setup()
@@ -27,7 +30,7 @@ app = FastAPI(
     summary="middleware service antara otomax client dan APi Provider.",
 )
 setup_middlewares(app)
-app.include_router(api_router)
+# app.include_router(api_router)
 
 
 @app.get("/")
@@ -56,6 +59,6 @@ if __name__ == "__main__":
         timeout_graceful_shutdown=uvc_config["timeout_graceful_shutdown"],
     )
 else:
-    logger.bind(server="uvicorn").info(
+    logger.bind(server="uvicorn").debug(
         "Not running in main block, use 'uvicorn main:app' to start"
     )
