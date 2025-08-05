@@ -53,8 +53,8 @@ def main():
             f"[bold red]Alert![/bold red] File [magenta]{ENV_NAME}[/magenta] tidak ditemukan di :warning: [bold yellow]{ENV_PATH}[/bold yellow], membuat baru..."
         )
         pbar_load_default()
-        typer.echo("=== Konfigurasi default .env, Sesuaikan Sebelum Running App. ===")
-        print(DEFAULT_UVICORN_CONFIG)
+        typer.echo("=== Konfigurasi .env, Masukkan semua data yang diperlukan. ===")
+        # Prompt all values from user
         useradmin = typer.prompt("Masukan username admin", default="admin")
         userpassword = typer.prompt(
             text="Masukan password admin",
@@ -67,20 +67,31 @@ def main():
         typer.echo(f"Fernet Key: {fernet_key}")
         typer.echo(f"Secret Key: {secret_key}")
         debug = typer.confirm("Aktifkan debug mode?", default=True)
+        app_env = typer.prompt("APP_ENV", default="production")
+        uvicorn_host = typer.prompt("UVICORN_HOST", default="0.0.0.0")
+        uvicorn_port = typer.prompt("UVICORN_PORT", default=8000)
+        uvicorn_reload = typer.confirm("UVICORN_RELOAD?", default=True)
+        uvicorn_log_level = typer.prompt("UVICORN_LOG_LEVEL", default="info")
+        uvicorn_timeout_keep_alive = typer.prompt(
+            "UVICORN_TIMEOUT_KEEP_ALIVE", default=5
+        )
+        uvicorn_timeout_graceful_shutdown = typer.prompt(
+            "UVICORN_TIMEOUT_GRACEFUL_SHUTDOWN", default=5
+        )
 
         # Compose .env content
         env_content = f"""APP_DEBUG={debug}
-APP_ENV=\"production\"
-APP_DECRYPT_KEY=\"{fernet_key}\"
-APP_SECRET_KEY=\"{secret_key}\"
-ADMIN_USER=\"{useradmin}\"
-ADMIN_PASSWORD=\"{userpassword}\"
-UVICORN_HOST=\"{DEFAULT_UVICORN_CONFIG["host"]}\"
-UVICORN_PORT={DEFAULT_UVICORN_CONFIG["port"]}
-UVICORN_RELOAD={DEFAULT_UVICORN_CONFIG["reload"]}
-UVICORN_LOG_LEVEL=\"{DEFAULT_UVICORN_CONFIG["log_level"]}\"
-UVICORN_TIMEOUT_KEEP_ALIVE={DEFAULT_UVICORN_CONFIG["timeout_keep_alive"]}
-UVICORN_TIMEOUT_GRACEFUL_SHUTDOWN={DEFAULT_UVICORN_CONFIG["timeout_graceful_shutdown"]}
+APP_ENV="{app_env}"
+APP_DECRYPT_KEY="{fernet_key}"
+APP_SECRET_KEY="{secret_key}"
+ADMIN_USER="{useradmin}"
+ADMIN_PASSWORD="{userpassword}"
+UVICORN_HOST="{uvicorn_host}"
+UVICORN_PORT={uvicorn_port}
+UVICORN_RELOAD={uvicorn_reload}
+UVICORN_LOG_LEVEL="{uvicorn_log_level}"
+UVICORN_TIMEOUT_KEEP_ALIVE={uvicorn_timeout_keep_alive}
+UVICORN_TIMEOUT_GRACEFUL_SHUTDOWN={uvicorn_timeout_graceful_shutdown}
 """
         with ENV_PATH.open("w") as f:
             f.write(env_content)
