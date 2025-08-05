@@ -2,11 +2,13 @@ import uvicorn
 from fastapi import FastAPI
 
 from src._version import version
-from src.config import lifespan, setup_middlewares
-from src.core.config import ServerSettings  # updated import
+from src.core.config import Config
+from src.core.lifespan import lifespan
+from src.core.middleware import setup_middlewares
 from src.mlogger import logger
 
-# Get logger (setup will happen in lifespan)
+config = Config()
+uvc = config.server
 
 
 app = FastAPI(
@@ -27,24 +29,23 @@ async def root():
 
 
 if __name__ == "__main__":
-    uvc_config = ServerSettings().model_dump()  # type: ignore
     logger.bind(
         server="uvicorn",
-        host=uvc_config["host"],
-        port=uvc_config["port"],
-        reload=uvc_config["reload"],
-        workers=uvc_config["workers"],
-        log_level=uvc_config["log_level"],
-    ).info(f"Starting Uvicorn server with config: {uvc_config}")
+        host=uvc.host,
+        port=uvc.port,
+        reload=uvc.reload,
+        workers=uvc.workers,
+        log_level=uvc.log_level,
+    ).info(f"Starting Uvicorn server with config: {uvc}")
     uvicorn.run(
         app="main:app",
-        host=uvc_config["host"],
-        port=uvc_config["port"],
-        reload=uvc_config["reload"],
-        workers=uvc_config["workers"],
-        log_level=uvc_config["log_level"],
-        timeout_keep_alive=uvc_config["timeout_keep_alive"],
-        timeout_graceful_shutdown=uvc_config["timeout_graceful_shutdown"],
+        host=uvc.host,
+        port=uvc.port,
+        reload=uvc.reload,
+        workers=uvc.workers,
+        log_level=uvc.log_level,
+        timeout_keep_alive=uvc.timeout_keep_alive,
+        timeout_graceful_shutdown=uvc.timeout_graceful_shutdown,
     )
 else:
     logger.bind(server="uvicorn").info(

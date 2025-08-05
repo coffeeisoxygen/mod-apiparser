@@ -45,6 +45,8 @@ class Config(BaseSettings):
         env_file_encoding="utf-8",
         extra="ignore",  # Ignore extra fields not defined in the model
         case_sensitive=False,  # Environment variables are case-insensitive by default
+        env_nested_delimiter="__",  # Support nested env vars like SERVER__HOST
+        nested_model_default_partial_update=True,  # Allow partial updates for nested models
     )
 
     service: str = "mod-apiparser"
