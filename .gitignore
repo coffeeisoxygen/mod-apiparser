@@ -60,3 +60,6 @@ user_info.json
 *.instructions.md
 *.prompt.md
 *.chatmode.md
+
+# more files
+*sec_*
