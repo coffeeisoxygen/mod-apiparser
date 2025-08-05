@@ -16,12 +16,3 @@ class BasExceptionError(Exception):
         )
 
 
-class AppException:
-    """Collection of application-specific exceptions."""
-
-    class AccountServiceError(BasExceptionError):
-        """Exception raised for errors in the account service."""
-
-        def __init__(self, message: str | None = None, context: dict | None = None):
-            default_message = "Account service error occurred."
-            super().__init__(500, message or default_message, context)
