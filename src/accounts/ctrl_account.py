@@ -21,7 +21,7 @@ class AsyncCLI:
         self.account_service = AccountFileService(self.crypto_service)
 
     async def interactive_create_account(self) -> AccountCreate | None:
-        """Interactive account creation dengan pydantic validation"""
+        """Interactive account creation dengan pydantic validation."""
         console.print("[bold blue]Creating New Account[/bold blue]")
 
         try:
@@ -70,7 +70,7 @@ class AsyncCLI:
             return None
 
     async def create_initial_config(self) -> bool:
-        """Create initial accounts.yaml file"""
+        """Create initial accounts.yaml file."""
         accounts_path = Path("accounts.yaml")
 
         if accounts_path.exists():

@@ -3,7 +3,7 @@ from pathlib import Path
 
 import yaml
 
-from core.exceptions import AccountServiceError
+from src.exceptions.app_exception import AppException
 from services.crypto_service import CryptoService
 from src.accounts.sch_account import AccountCreate, AccountRead
 
@@ -117,7 +117,7 @@ class AccountFileService:
         # Check duplicate accountid
         for existing in existing_accounts:
             if existing.accountid == account.accountid:
-                raise AccountServiceError(
+                raise AppException.AccountServiceError(
                     f"Account ID '{account.accountid}' already exists"
                 )
 
