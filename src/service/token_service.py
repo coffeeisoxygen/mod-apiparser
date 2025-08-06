@@ -1,9 +1,8 @@
 """Advanced token service using Authlib for robust JWT handling."""
 
 import secrets
-from sys import settrace
 import time
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -11,12 +10,13 @@ from authlib.jose import JsonWebSignature, JsonWebToken
 from authlib.jose.errors import JoseError
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
+
 from dependencies.dep_settings import get_settings
 from src.mlogger import get_logger
 
 logger = get_logger(__name__)
-
 settings = get_settings()
+
 
 class TokenServiceError(Exception):
     """Base exception for token service errors."""
@@ -37,74 +37,80 @@ class TokenInvalidError(TokenServiceError):
 
 
 class AdvancedTokenService:
-    """Advanced JWT token service.
-
-    with:
-    - Multiple signing algorithms (HS256, RS256, ES256)
-    - Token refresh mechanism
-    - Blacklist support
-    - Audience validation
-    - Custom claims
-    - Rate limiting integration ready
-    """
+    """Advanced JWT token service with configuration-driven setup."""
 
     def __init__(
         self,
         secret_key: str | None = None,
-        algorithm: str = settings.algorithm,
-        issuer: str = "otomax-api",
-        audience: str = "otomax-client",
-        access_token_expire_minutes: int = settings.token_expiration,
-        refresh_token_expire_days: int = 7,
+        algorithm: str | None = None,
+        issuer: str | None = None,
+        audience: str | None = None,
+        access_token_expire_minutes: int | None = None,
+        refresh_token_expire_days: int | None = None,
         key_file_path: Path | None = None,
     ):
-        """Initialize advanced token service."""
-        self.algorithm = algorithm
-        self.issuer = issuer
-        self.audience = audience
-        self.access_token_expire_minutes = access_token_expire_minutes
-        self.refresh_token_expire_days = refresh_token_expire_days
+        """Initialize advanced token service with settings."""
+        # Use settings with fallbacks
+        self.algorithm = algorithm or settings.jwt_algorithm
+        self.issuer = issuer or settings.jwt_issuer
+        self.audience = audience or settings.jwt_audience
+        self.access_token_expire_minutes = (
+            access_token_expire_minutes or settings.jwt_access_token_expire_minutes
+        )
+        self.refresh_token_expire_days = (
+            refresh_token_expire_days or settings.jwt_refresh_token_expire_days
+        )
 
         # Initialize JWT handler
-        self.jwt = JsonWebToken([algorithm])
-        self.jws = JsonWebSignature([algorithm])
+        self.jwt = JsonWebToken([self.algorithm])
+        self.jws = JsonWebSignature([self.algorithm])
 
-        # Token blacklist (in production, use Redis/database)
+        # Token blacklist (configurable)
         self._blacklist: set[str] = set()
+        self._blacklist_enabled = settings.jwt_blacklist_enabled
 
         # Setup keys based on algorithm
-        self._setup_keys(secret_key, key_file_path)
+        key_path = key_file_path or settings.jwt_key_file_path
+        secret = secret_key or settings.effective_jwt_secret
+        self._setup_keys(secret, key_path)
 
-        logger.info(f"TokenService initialized with algorithm: {algorithm}")
+        logger.info(f"TokenService initialized with algorithm: {self.algorithm}")
 
-    def _setup_keys(self, secret_key: str | None, key_file_path: Path | None) -> None:
+    def _setup_keys(self, secret_key: str | None, key_file_path: Path) -> None:
         """Setup signing keys based on algorithm."""
         if self.algorithm.startswith("HS"):
             # HMAC algorithms
             self.secret_key = secret_key or self._generate_secret_key()
             self.public_key = None
+            logger.debug("Using HMAC algorithm with secret key")
 
         elif self.algorithm.startswith("RS") or self.algorithm.startswith("ES"):
             # RSA/ECDSA algorithms
-            if key_file_path and key_file_path.exists():
+            if key_file_path.exists():
                 self._load_rsa_keys(key_file_path)
+                logger.debug(f"Loaded RSA keys from: {key_file_path}")
             else:
                 self._generate_rsa_keys(key_file_path)
+                logger.info(f"Generated new RSA keys at: {key_file_path}")
         else:
             raise TokenServiceError(f"Unsupported algorithm: {self.algorithm}")
 
     def _generate_secret_key(self) -> str:
         """Generate a cryptographically secure secret key."""
-        return secrets.token_urlsafe(32)
+        key = secrets.token_urlsafe(32)
+        logger.warning(
+            "Generated new secret key. In production, set JWT_SECRET_KEY in environment!"
+        )
+        return key
 
-    def _generate_rsa_keys(self, save_path: Path | None = None) -> None:
+    def _generate_rsa_keys(self, save_path: Path) -> None:
         """Generate RSA key pair for RS256/RS512 algorithms."""
         logger.info("Generating new RSA key pair...")
 
         # Generate private key
         private_key = rsa.generate_private_key(
             public_exponent=65537,
-            key_size=2048,
+            key_size=settings.jwt_key_size,
         )
 
         # Get public key
@@ -122,17 +128,16 @@ class AdvancedTokenService:
             format=serialization.PublicFormat.SubjectPublicKeyInfo,
         )
 
-        # Save to file if path provided
-        if save_path:
-            save_path.parent.mkdir(parents=True, exist_ok=True)
+        # Save to file
+        save_path.parent.mkdir(parents=True, exist_ok=True)
 
-            with open(save_path.with_suffix(".pem"), "wb") as f:
-                f.write(self.secret_key)
+        with open(save_path.with_suffix(".pem"), "wb") as f:
+            f.write(self.secret_key)
 
-            with open(save_path.with_suffix(".pub"), "wb") as f:
-                f.write(self.public_key)
+        with open(save_path.with_suffix(".pub"), "wb") as f:
+            f.write(self.public_key)
 
-            logger.info(f"RSA keys saved to: {save_path}")
+        logger.info(f"RSA keys saved to: {save_path}")
 
     def _load_rsa_keys(self, key_file_path: Path) -> None:
         """Load RSA keys from file."""
@@ -143,112 +148,42 @@ class AdvancedTokenService:
             with open(key_file_path.with_suffix(".pub"), "rb") as f:
                 self.public_key = f.read()
 
-            logger.info(f"RSA keys loaded from: {key_file_path}")
-
         except FileNotFoundError as e:
             logger.error(f"Key files not found: {e}")
             raise TokenServiceError(f"Key files not found: {e}")
-
-    def create_access_token(
-        self,
-        subject: str,
-        extra_claims: dict[str, Any] | None = None,
-        expire_delta: timedelta | None = None,
-    ) -> str:
-        """Create JWT access token with standard and custom claims."""
-        now = datetime.now(UTC)
-        expire = now + (
-            expire_delta or timedelta(minutes=self.access_token_expire_minutes)
-        )
-
-        # Standard claims
-        payload = {
-            "sub": subject,
-            "iss": self.issuer,
-            "aud": self.audience,
-            "iat": int(now.timestamp()),
-            "exp": int(expire.timestamp()),
-            "jti": secrets.token_urlsafe(16),  # JWT ID for blacklisting
-            "token_type": "access",
-        }
-
-        # Add extra claims
-        if extra_claims:
-            payload.update(extra_claims)
-
-        try:
-            token = self.jwt.encode(
-                header={"alg": self.algorithm}, payload=payload, key=self.secret_key
-            )
-
-            logger.debug(f"Access token created for subject: {subject}")
-            return token.decode() if isinstance(token, bytes) else token
-
-        except JoseError as e:
-            logger.error(f"Failed to create access token: {e}")
-            raise TokenServiceError(f"Token creation failed: {e}")
-
-    def create_refresh_token(
-        self,
-        subject: str,
-        extra_claims: dict[str, Any] | None = None,
-    ) -> str:
-        """Create JWT refresh token with longer expiration."""
-        now = datetime.now(UTC)
-        expire = now + timedelta(days=self.refresh_token_expire_days)
-
-        payload = {
-            "sub": subject,
-            "iss": self.issuer,
-            "aud": self.audience,
-            "iat": int(now.timestamp()),
-            "exp": int(expire.timestamp()),
-            "jti": secrets.token_urlsafe(16),
-            "token_type": "refresh",
-        }
-
-        if extra_claims:
-            payload.update(extra_claims)
-
-        try:
-            token = self.jwt.encode(
-                header={"alg": self.algorithm}, payload=payload, key=self.secret_key
-            )
-
-            logger.debug(f"Refresh token created for subject: {subject}")
-            return token.decode() if isinstance(token, bytes) else token
-
-        except JoseError as e:
-            logger.error(f"Failed to create refresh token: {e}")
-            raise TokenServiceError(f"Refresh token creation failed: {e}")
 
     def verify_token(
         self,
         token: str,
         expected_type: str = "access",
-        verify_signature: bool = True,
+        verify_signature: bool | None = None,
     ) -> dict[str, Any]:
-        """Verify and decode JWT token with comprehensive validation."""
+        """Verify and decode JWT token with configuration-driven validation."""
         if not token:
             raise TokenInvalidError("Token is required")
 
-        # Check blacklist
-        if self._is_blacklisted(token):
+        # Check blacklist (if enabled)
+        if self._blacklist_enabled and self._is_blacklisted(token):
             raise TokenInvalidError("Token has been revoked")
 
         try:
-            # Use public key for verification if available (RSA/ECDSA)
+            # Use configuration for verification options
             verification_key = self.public_key or self.secret_key
+            verify_sig = (
+                verify_signature
+                if verify_signature is not None
+                else settings.jwt_verify_signature
+            )
 
             # Decode and verify token
             claims = self.jwt.decode(
                 token,
                 key=verification_key,
                 claims_options={
-                    "verify_signature": verify_signature,
-                    "verify_aud": True,
-                    "verify_iss": True,
-                    "verify_exp": True,
+                    "verify_signature": verify_sig,
+                    "verify_aud": settings.jwt_verify_audience,
+                    "verify_iss": settings.jwt_verify_issuer,
+                    "verify_exp": settings.jwt_verify_expiration,
                 },
             )
 
@@ -259,12 +194,12 @@ class AdvancedTokenService:
             if claims.get("token_type") != expected_type:
                 raise TokenInvalidError(f"Expected {expected_type} token")
 
-            # Check audience
-            if claims.get("aud") != self.audience:
+            # Check audience (if verification enabled)
+            if settings.jwt_verify_audience and claims.get("aud") != self.audience:
                 raise TokenInvalidError("Invalid audience")
 
-            # Check issuer
-            if claims.get("iss") != self.issuer:
+            # Check issuer (if verification enabled)
+            if settings.jwt_verify_issuer and claims.get("iss") != self.issuer:
                 raise TokenInvalidError("Invalid issuer")
 
             logger.debug(
@@ -382,18 +317,10 @@ class AdvancedTokenService:
         logger.info("Blacklist cleanup completed")
 
 
-# Convenience functions for common use cases
-def create_token_service(
-    algorithm: str = "HS256",
-    secret_key: str | None = None,
-) -> AdvancedTokenService:
-    """Create token service with sensible defaults."""
-    return AdvancedTokenService(
-        algorithm=algorithm,
-        secret_key=secret_key,
-        issuer="otomax-api",
-        audience="otomax-client",
-    )
+# Factory function with settings
+def create_token_service() -> AdvancedTokenService:
+    """Create token service with settings configuration."""
+    return AdvancedTokenService()
 
 
 # Global token service instance

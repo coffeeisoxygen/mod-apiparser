@@ -13,13 +13,13 @@ def get_settings() -> Settings:
 
     Use This In Service Or Everywhere you need settings.
     """
-    return Settings()  # type: ignore
+    return Settings()  # pyright: ignore[reportCallIssue]
 
 
 class EnvInfoModel(BaseModel):
     """Model for environment information."""
 
-    services: str
+    service: str
     version: str
     debug: bool
     environment: EnvironmentEnum
@@ -29,12 +29,12 @@ def get_env_settings() -> EnvInfoModel:
     """Returns environment settings."""
     settings: Settings = get_settings()
     return EnvInfoModel(
-        services=settings.service,
+        service=settings.service,
         version=settings.version,
         debug=settings.debug,
         environment=settings.environment,
     )
 
 
-# Sample Call With Anotated Dependency
+# Sample Call With Annotated Dependency
 EnvInfo = Annotated[EnvInfoModel, Depends(get_env_settings)]
