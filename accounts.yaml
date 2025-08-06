@@ -4,7 +4,7 @@ accounts:
     description: ini contoh cara isi account # ini metadata
     operator: opr_example # ini nama operator kyk telkomsel, xl, indosat dll
     provider: prov_example # ini grup kyk digipos | mytesel atau isimple|myim3
-    username: WIR6289504
+    username: WIR62895041341
     pin: 123456
     base_url: http://10.0.0.3:10003/
     is_active: true
