@@ -102,6 +102,7 @@ def ensure_file_and_folder(path: str | Path, placeholder: str = "") -> None:
         ) from e
 
 
+# ini haya untuk cheking / batch create file.
 def ensure_all_files(files: list[tuple[str | Path, str]]) -> None:
     """Ensure that all specified files and their parent folders exist.
 

@@ -2,10 +2,9 @@ import base64
 
 from cryptography.fernet import Fernet
 
-from src.core.config import Config
+from src.dependencies.dep_settings import get_settings
 
-config = Config()
-keys = config.key
+secret_key_value = get_settings().secret_key
 
 
 class CryptoService:
@@ -13,7 +12,7 @@ class CryptoService:
 
     def __init__(self, key: str | None = None):
         # Use Fernet key from config, or optionally from argument
-        self._fernet_key = (key or keys.decrypt_key).encode("utf-8")
+        self._fernet_key = (key or secret_key_value).encode("utf-8")
         self._fernet = Fernet(self._fernet_key)
 
     def encrypt(self, data: str | bytes) -> str:
