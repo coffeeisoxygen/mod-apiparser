@@ -5,10 +5,10 @@ from typing import Any
 import yaml
 from pydantic import ValidationError
 
-from mlogger import logger
 from src.dependencies.dep_settings import get_settings
 from src.domain.user.sch_user import UserInDB
 from src.exceptions.app_exceptions import AppException
+from src.mlogger import logger
 
 
 class UserRepository:

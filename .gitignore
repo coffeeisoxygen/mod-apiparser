@@ -69,3 +69,7 @@ accounts.yaml
 
 secrets/
 src/mlogger/docs
+
+.env.dev
+.env.prod
+.env.test

@@ -5,7 +5,7 @@ from collections.abc import Callable
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
 
-from mlogger import logger
+from src.mlogger import logger
 
 
 def ensure_str_path(path: pathlib.Path | str | bytes) -> str:
