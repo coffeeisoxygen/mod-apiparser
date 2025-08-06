@@ -3,12 +3,12 @@
 from contextlib import asynccontextmanager
 
 from src.mlogger import shutdown_logging
-from src.service.seed_admin import SeederService
+from src.service.seeder import SeederService
 
 
 @asynccontextmanager
 async def lifespan(app):  # noqa: ANN001, ARG001, D103, RUF029
-    SeederService().seed()
+    SeederService().create_default_users()
     yield
 
     # Properly shutdown logging system

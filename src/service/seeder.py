@@ -25,25 +25,12 @@ DEFAULT_USERS = [
     },
 ]
 
-DEFAULT_MODULES = [
-    {
-        "name": "module1",
-        "description": "This is module 1",
-        "is_active": True,
-    },
-    {
-        "name": "module2",
-        "description": "This is module 2",
-        "is_active": True,
-    },
-]
-
 
 class SeederService:
     def __init__(self):
         self.path_users = pathlib.Path(get_settings().path_users)
 
-    def seed(self):
+    def create_default_users(self):
         """Seed users file with default admin if not exists or empty."""
         if not self.path_users.exists() or self.path_users.stat().st_size == 0:
             # check if directory exists, if not create it
