@@ -2,8 +2,11 @@
 
 import secrets
 import time
+from enum import StrEnum
 from pathlib import Path
 
+import click
+import click_prompt
 import typer
 from argon2 import PasswordHasher
 from cryptography.fernet import Fernet
@@ -12,6 +15,14 @@ from rich.progress import track
 
 ENV_NAME = ".env.example"
 ENV_PATH = Path(__file__).resolve().parent.parent / ENV_NAME
+
+
+class EnvironmentEnum(StrEnum):
+    """Enumeration for environment types."""
+
+    PRODUCTION = "production"
+    DEVELOPMENT = "development"
+    TESTING = "testing"
 
 
 def pbar_load_default():
@@ -45,15 +56,40 @@ def generating_keys():
     return fernet_key, secret_key
 
 
-def main():
+class Command(typer.core.TyperCommand):
+    def __call__(self, *args, **kwargs) -> None:
+        for p in self.params:
+            if isinstance(p, click.Option) and isinstance(p.type, click.Choice):
+                p.__class__ = click_prompt.ChoiceOption
+        super().__call__(*args, **kwargs)
+
+
+app = typer.Typer(cls=Command)
+
+
+@app.command()
+def env_setup():
     """Main entry point for the CLI."""
+    create_env = False
     if not ENV_PATH.exists():
         print(
             f"[bold red]Alert![/bold red] File [magenta]{ENV_NAME}[/magenta] tidak ditemukan di :warning: [bold yellow]{ENV_PATH}[/bold yellow], membuat baru..."
         )
+        create_env = True
+    else:
+        overwrite = typer.confirm(
+            f"File {ENV_PATH} sudah ada. Apakah ingin menimpa (overwrite)?",
+            default=False,
+        )
+        if overwrite:
+            create_env = True
+        else:
+            typer.echo(f"File {ENV_PATH} sudah ada, tidak perlu membuat baru.")
+            return
+
+    if create_env:
         pbar_load_default()
         typer.echo("=== Konfigurasi .env, Masukkan semua data yang diperlukan. ===")
-        # Prompt all values from user
         useradmin = typer.prompt("Masukan username admin", default="admin")
         userpassword = typer.prompt(
             text="Masukan password admin",
@@ -70,23 +106,28 @@ def main():
         fernet_key, secret_key = generating_keys()
         typer.echo(f"Fernet Key: {fernet_key}")
         typer.echo(f"Secret Key: {secret_key}")
+        typer.echo("generating Algorithm: HS256")
         debug = typer.confirm("Aktifkan debug mode?", default=True)
-        app_env = typer.prompt("APP_ENV", default="production")
+        env_choice = click.Choice([e.value for e in EnvironmentEnum])
+        app_env = typer.prompt(
+            text="Pilih environment",
+            type=env_choice,
+            default=EnvironmentEnum.PRODUCTION.value,
+            show_choices=True,
+        )
 
-        # Compose .env content (removed uvicorn related variables)
         env_content = f"""APP_DEBUG={debug}
 APP_ENV="{app_env}"
 APP_DECRYPT_KEY="{fernet_key}"
 APP_SECRET_KEY="{secret_key}"
+APP_HASH_ALGORITHM="HS256"
 ADMIN_USER="{useradmin}"
 ADMIN_PASSWORD="{hashed_password}"
 """
         with ENV_PATH.open("w") as f:
             f.write(env_content)
         typer.secho(f"File {ENV_PATH} berhasil dibuat!", fg=typer.colors.GREEN)
-    else:
-        typer.echo(f"File {ENV_PATH} sudah ada, tidak perlu membuat baru.")
 
 
 if __name__ == "__main__":
-    typer.run(function=main)
+    app()
