@@ -4,7 +4,7 @@ import uvicorn
 from fastapi import FastAPI
 
 from src._version import version
-from src.config.base import Settings
+from src.config.settings import Settings
 from src.core.lifespan import lifespan
 from src.core.middleware import setup_middlewares
 
