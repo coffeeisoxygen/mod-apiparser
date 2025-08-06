@@ -7,24 +7,6 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from src._version import __version__ as version
 
 
-class ServerSettings(BaseSettings):
-    """Settings related to the server (Uvicorn)."""
-
-    host: str = Field("0.0.0.0", alias="UVICORN_HOST")
-    port: int = Field(8000, alias="UVICORN_PORT")
-    reload: bool = Field(True, alias="UVICORN_RELOAD")
-    workers: int = Field(1, alias="UVICORN_WORKERS")
-    log_level: str = Field("info", alias="UVICORN_LOG_LEVEL")
-    timeout_keep_alive: int = Field(5, alias="UVICORN_TIMEOUT_KEEP_ALIVE")
-    timeout_graceful_shutdown: int = Field(5, alias="UVICORN_TIMEOUT_GRACEFUL_SHUTDOWN")
-
-    model_config = SettingsConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
-        extra="ignore",
-    )
-
-
 class KeysSettings(BaseSettings):
     """Settings related to the application secrets."""
 
@@ -79,7 +61,6 @@ class Config(BaseSettings):
     version: str = version
     environment: str = "development"
 
-    server: ServerSettings = ServerSettings()  # type: ignore
     key: KeysSettings = KeysSettings()  # type: ignore
     admin: AdminSettings = AdminSettings()  # type: ignore
     hash: HashSettings = HashSettings()  # type: ignore
