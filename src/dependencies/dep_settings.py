@@ -3,9 +3,14 @@ from functools import lru_cache
 from typing import Annotated
 
 from fastapi import Depends
-from pydantic import BaseModel
 
-from src.config.settings import EnvironmentEnum, Settings
+from src.config.settings import (
+    AppConfig,
+    JWTConfig,
+    PathConfig,
+    SecurityConfig,
+    Settings,
+)
 
 
 @lru_cache
@@ -25,25 +30,33 @@ def get_settings() -> Settings:
     return Settings(_env_file=env_files)  # type: ignore
 
 
-class EnvInfoModel(BaseModel):
-    """Model for environment information."""
-
-    service: str
-    version: str
-    debug: bool
-    environment: EnvironmentEnum
-
-
-def get_env_settings() -> EnvInfoModel:
-    """Returns environment settings."""
+def get_app_config() -> AppConfig:
+    """Returns app configuration from settings."""
     settings: Settings = get_settings()
-    return EnvInfoModel(
-        service=settings.service,
-        version=settings.version,
-        debug=settings.debug,
-        environment=settings.environment,
-    )
+    return settings.app
 
 
-# Sample Call With Annotated Dependency
-EnvInfo = Annotated[EnvInfoModel, Depends(get_env_settings)]
+def get_jwt_config() -> JWTConfig:
+    """Returns JWT configuration from settings."""
+    settings: Settings = get_settings()
+    return settings.jwt
+
+
+def get_security_config() -> SecurityConfig:
+    """Returns security configuration from settings."""
+    settings: Settings = get_settings()
+    return settings.security
+
+
+def get_path_config() -> PathConfig:
+    """Returns path configuration from settings."""
+    settings: Settings = get_settings()
+    return settings.paths
+
+
+# FastAPI Dependencies
+AppConfigDep = Annotated[AppConfig, Depends(get_app_config)]
+JWTConfigDep = Annotated[JWTConfig, Depends(get_jwt_config)]
+SecurityConfigDep = Annotated[SecurityConfig, Depends(get_security_config)]
+PathConfigDep = Annotated[PathConfig, Depends(get_path_config)]
+SettingsDep = Annotated[Settings, Depends(get_settings)]

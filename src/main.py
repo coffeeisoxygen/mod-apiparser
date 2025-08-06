@@ -6,7 +6,7 @@ from fastapi.responses import HTMLResponse
 from src._version import version
 from src.core.lifespan import lifespan
 from src.core.middleware import setup_middlewares
-from src.dependencies.dep_settings import EnvInfo, get_settings
+from src.dependencies.dep_settings import AppConfig, get_settings
 
 app = FastAPI(
     debug=get_settings().debug,
@@ -28,8 +28,8 @@ async def root():
 
 
 @app.get("/info")
-async def info(env_parameters: EnvInfo) -> EnvInfo:
-    """Get information about the current environment.
+async def info(app_parameters: AppConfig) -> AppConfig:
+    """Get information about the current application configuration.
 
     This endpoint provides details about the current environment settings.
 
@@ -39,7 +39,7 @@ async def info(env_parameters: EnvInfo) -> EnvInfo:
     Returns:
         EnvInfo: The environment settings.
     """
-    return env_parameters
+    return app_parameters
 
 
 @app.get("/terms", response_class=HTMLResponse)
