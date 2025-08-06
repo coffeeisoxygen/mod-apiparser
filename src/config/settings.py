@@ -26,13 +26,13 @@ class Settings(BaseSettings):
 
     service: str = "mod-apiparser"
     version: str = version
-    username: str = Field(..., alias="ADMIN_USERNAME")
-    password: str = Field(..., alias="ADMIN_PASSWORD")
     decrypt_key: str = Field(..., alias="KEY_DECRYPT")
     secret_key: str = Field(..., alias="KEY_SECRET")
     algorithm: str = Field(..., alias="KEY_ALGORITHM")
+    token_expiration: int = Field(3600, alias="TOKEN_EXPIRATION")
     debug: bool = Field(False, alias="APP_DEBUG")
     environment: EnvironmentEnum = Field(
         default=EnvironmentEnum.PRODUCTION, alias="APP_ENV"
     )
-    path_accounts: str = Field("accounts.yaml", alias="PATH_ACCOUNTS")
+    path_users: str = Field("users.yaml", alias="PATH_USERS")
+    path_modules: str = Field("modules.yaml", alias="PATH_MODULES")

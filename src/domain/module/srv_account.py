@@ -1,4 +1,4 @@
-from src.domain.account.sch_account import AccountCreate, AccountRead
+from src.domain.module.sch_account import AccountCreate, AccountRead
 
 # In-memory storage for demonstration purposes
 _accounts_db: dict[str, AccountRead] = {}
