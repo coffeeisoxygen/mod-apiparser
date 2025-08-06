@@ -4,7 +4,7 @@ import yaml
 
 from src.dependencies.dep_settings import get_settings
 from src.domain.user.sch_user import UserInDB
-from src.utils.hasher_service import HasherService
+from src.service.hasher_service import HasherService
 
 DEFAULT_USERS = [
     {
