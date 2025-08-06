@@ -182,8 +182,12 @@ class TestCLICommands:
         assert result.exit_code == 0
         assert "Environment Files Status" in result.stdout
 
-    def test_show_info_shows_missing_files(self, runner):
+    def test_show_info_shows_missing_files(self, runner, mock_env_files):
         """Test show-info correctly identifies missing files."""
+        # Ensure all files are removed to simulate missing files
+        for path in mock_env_files.values():
+            if path.exists():
+                path.unlink()
         result = runner.invoke(app, ["show-info"])
         assert result.exit_code == 0
         assert "❌ MISSING" in result.stdout
