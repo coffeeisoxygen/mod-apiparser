@@ -22,5 +22,8 @@ IF %ERRORLEVEL% NEQ 0 (
     exit /b %ERRORLEVEL%
 )
 
-REM Step 3: Jalankan FastAPI
-uv run uvicorn main:app --host 0.0.0.0 --port 8000 --workers 4
+REM Step 3: Jalankan FastAPI in development mode
+uv run uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
+
+REM Untuk priduction mode, uncomment the following line:
+REM uv run uvicorn src.main:app --host 0.0.0.0 --port 8000 --workers 4
