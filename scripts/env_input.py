@@ -309,7 +309,6 @@ JWT_COOKIE_SAMESITE=lax
 """
 
 
-
 @app.command()
 def env_setup():
     """Pure automatic environment setup - no prompts, just generates environment files."""
@@ -361,6 +360,7 @@ def env_setup():
     typer.echo("\n👤 Next steps:")
     typer.echo("   Use 'python scripts/user_cli_input.py' to create admin users")
     typer.echo("   Use 'python scripts/modules_cli_input.py' to manage modules")
+
 
 @app.command()
 def show_info():
