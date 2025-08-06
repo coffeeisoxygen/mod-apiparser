@@ -1,13 +1,15 @@
-import yaml
 import pytest
+import yaml
+from scripts.user_input import AdminUserInput, app, save_admin_to_yaml
 from typer.testing import CliRunner
-from scripts.user_input_new import app, AdminUserInput, save_admin_to_yaml
 
 pytestmark = pytest.mark.unit
+
 
 @pytest.fixture
 def runner():
     return CliRunner()
+
 
 @pytest.fixture
 def temp_secrets_dir(tmp_path, monkeypatch):
@@ -16,16 +18,18 @@ def temp_secrets_dir(tmp_path, monkeypatch):
     monkeypatch.setattr("scripts.user_input_new.Path", lambda *a, **k: tmp_path)
     return secrets_dir
 
+
 def test_admin_user_input_validation_success():
     user = AdminUserInput(
         username="adminuser",
         email="admin@example.com",
         name="Admin User",
-        password="securepass"
+        password="securepass",
     )
     assert user.username == "adminuser"
     assert user.is_active is True
     assert user.is_superuser is True
+
 
 def test_admin_user_input_validation_fail():
     with pytest.raises(Exception):
@@ -33,8 +37,9 @@ def test_admin_user_input_validation_fail():
             username="a",  # too short
             email="not-an-email",
             name="A",
-            password="123"
+            password="123",
         )
+
 
 def test_save_admin_to_yaml_creates_file(tmp_path, monkeypatch):
     # Patch Path to use tmp_path as base_dir
@@ -43,7 +48,7 @@ def test_save_admin_to_yaml_creates_file(tmp_path, monkeypatch):
         username="admin",
         email="admin@example.com",
         name="Admin",
-        password="password123"
+        password="password123",
     )
     save_admin_to_yaml(user, env="dev")
     yaml_file = tmp_path / "secrets" / "dev_users.yaml"
@@ -52,6 +57,7 @@ def test_save_admin_to_yaml_creates_file(tmp_path, monkeypatch):
         data = yaml.safe_load(f)
     assert any(u["username"] == "admin" for u in data["users"])
 
+
 def test_save_admin_to_yaml_updates_existing(tmp_path, monkeypatch):
     monkeypatch.setattr("scripts.user_input_new.Path", lambda *a, **k: tmp_path)
     secrets = tmp_path / "secrets"
@@ -59,17 +65,29 @@ def test_save_admin_to_yaml_updates_existing(tmp_path, monkeypatch):
     yaml_file = secrets / "dev_users.yaml"
     # Prepopulate with a user
     with open(yaml_file, "w") as f:
-        yaml.dump({"users": [{"username": "admin", "email": "old@mail.com", "name": "Old", "password": "x", "is_active": True, "is_superuser": True}]}, f)
+        yaml.dump(
+            {
+                "users": [
+                    {
+                        "username": "admin",
+                        "email": "old@mail.com",
+                        "name": "Old",
+                        "password": "x",
+                        "is_active": True,
+                        "is_superuser": True,
+                    }
+                ]
+            },
+            f,
+        )
     user = AdminUserInput(
-        username="admin",
-        email="new@mail.com",
-        name="New Name",
-        password="newpass"
+        username="admin", email="new@mail.com", name="New Name", password="newpass"
     )
     save_admin_to_yaml(user, env="dev")
     with open(yaml_file) as f:
         data = yaml.safe_load(f)
     assert any(u["email"] == "new@mail.com" for u in data["users"])
+
 
 def test_create_admin_command_interactive(monkeypatch, runner, tmp_path):
     # Patch Path to use tmp_path as base_dir
@@ -79,23 +97,30 @@ def test_create_admin_command_interactive(monkeypatch, runner, tmp_path):
     assert result.exit_code == 0
     assert "created successfully" in result.stdout
 
+
 def test_create_admin_command_with_options(monkeypatch, runner, tmp_path):
     monkeypatch.setattr("scripts.user_input_new.Path", lambda *a, **k: tmp_path)
     result = runner.invoke(
         app,
         [
             "create-admin",
-            "--username", "admin2",
-            "--email", "admin2@example.com",
-            "--name", "Admin Two",
-            "--password", "password456",
-            "--env", "test"
-        ]
+            "--username",
+            "admin2",
+            "--email",
+            "admin2@example.com",
+            "--name",
+            "Admin Two",
+            "--password",
+            "password456",
+            "--env",
+            "test",
+        ],
     )
     assert result.exit_code == 0
     assert "created successfully" in result.stdout
     yaml_file = tmp_path / "secrets" / "test_users.yaml"
     assert yaml_file.exists()
+
 
 def test_show_info_command(monkeypatch, runner, tmp_path):
     monkeypatch.setattr("scripts.user_input_new.Path", lambda *a, **k: tmp_path)
@@ -103,7 +128,21 @@ def test_show_info_command(monkeypatch, runner, tmp_path):
     secrets.mkdir()
     # Create dev_users.yaml with one user
     with open(secrets / "dev_users.yaml", "w") as f:
-        yaml.dump({"users": [{"username": "admin", "email": "admin@example.com", "name": "Admin", "password": "x", "is_active": True, "is_superuser": True}]}, f)
+        yaml.dump(
+            {
+                "users": [
+                    {
+                        "username": "admin",
+                        "email": "admin@example.com",
+                        "name": "Admin",
+                        "password": "x",
+                        "is_active": True,
+                        "is_superuser": True,
+                    }
+                ]
+            },
+            f,
+        )
     result = runner.invoke(app, ["show-info"])
     assert result.exit_code == 0
     assert "DEV Environment" in result.stdout
