@@ -1,5 +1,3 @@
-# ruff: noqa
-
 """Test script to verify environment loading."""
 
 import os
@@ -22,11 +20,15 @@ for env in environments:
         print(f"Debug: {settings.debug}")
         print(f"Service: {settings.service}")
         print(f"Version: {settings.version}")
-        print(f"JWT Secret Key (first 20 chars): {settings.jwt.secret_key[:20]}...")
-        print(f"JWT Algorithm: {settings.jwt.algorithm}")
-        print(f"Access Token Expire: {settings.jwt.access_token_expire_minutes}")
-        print(f"Users Path: {settings.paths.users}")
-        print(f"Modules Path: {settings.paths.modules}")
+        print(f"Database URL: {settings.database_url}")
+        print(
+            f"JWT Secret Key (first 20 chars): {settings.security.jwt.secret_key[:20]}..."
+        )
+        print(f"JWT Algorithm: {settings.security.jwt.algorithm}")
+        print(
+            f"Access Token Expire: {settings.security.jwt.access_token_expire_minutes}"
+        )
+        print(f"Log Level: {settings.log_level}")
 
     except Exception as e:
         print(f"Error loading {env} environment: {e}")

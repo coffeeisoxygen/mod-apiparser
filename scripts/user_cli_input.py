@@ -52,20 +52,13 @@ def prompt_for_field(
                 value = _prompt_bool_field(description, default_value)
             else:
                 value = _prompt_default_field(description, default_value)
-
-            # Test validation with current value
+            # Test validation
             test_data = get_test_data()
             test_data[field_name] = value
             UserInput(**test_data)
-
         except ValidationError as e:
             error_msg = e.errors()[0]["msg"] if e.errors() else "Invalid input"
             console.print(f"[red]❌ {error_msg}[/red]")
-        except KeyboardInterrupt:
-            # Re-raise KeyboardInterrupt to be handled by main function
-            raise
-        except Exception as e:
-            console.print(f"[red]❌ Unexpected error: {e}[/red]")
         else:
             return value
 
@@ -105,67 +98,54 @@ def interactive_mode() -> UserInput:
     fields = UserInput.model_fields
     data = {}
 
-    try:
-        data["username"] = prompt_for_field(
-            "username", fields["username"].description or "", "admin"
-        )
-        data["email"] = prompt_for_field(
-            "email", fields["email"].description or "", "admin@example.com"
-        )
-        data["name"] = prompt_for_field(
-            "name", fields["name"].description or "", "Administrator"
-        )
-        data["password"] = prompt_for_field(
-            "password", fields["password"].description or ""
-        )
-        data["is_active"] = prompt_for_field(
-            "is_active", fields["is_active"].description or "", True
-        )
-        data["is_superuser"] = prompt_for_field(
-            "is_superuser", fields["is_superuser"].description or "", False
-        )
+    data["username"] = prompt_for_field(
+        "username", fields["username"].description or "", "admin"
+    )
+    data["email"] = prompt_for_field(
+        "email", fields["email"].description or "", "admin@example.com"
+    )
+    data["name"] = prompt_for_field(
+        "name", fields["name"].description or "", "Administrator"
+    )
+    data["password"] = prompt_for_field(
+        "password", fields["password"].description or ""
+    )
+    data["is_active"] = prompt_for_field(
+        "is_active", fields["is_active"].description or "", True
+    )
+    data["is_superuser"] = prompt_for_field(
+        "is_superuser", fields["is_superuser"].description or "", False
+    )
 
-        return UserInput(**data)
-
-    except KeyboardInterrupt:
-        # Re-raise to be handled by caller
-        raise
-    except Exception as e:
-        console.print(f"[red]❌ Error during interactive input: {e}[/red]")
-        raise
+    return UserInput(**data)
 
 
 def save_to_yaml(user: UserInput, env: str = "dev") -> None:
     """Save user to YAML file."""
-    try:
-        base_dir = Path(__file__).resolve().parent.parent
-        yaml_file = base_dir / "secrets" / f"{env}_users.yaml"
+    base_dir = Path(__file__).resolve().parent.parent
+    yaml_file = base_dir / "secrets" / f"{env}_users.yaml"
 
-        user_data = {
-            "username": user.username,
-            "email": user.email,
-            "name": user.name,
-            "password": user.get_hashed_password(),
-            "is_active": user.is_active,
-            "is_superuser": user.is_superuser,
-        }
+    user_data = {
+        "username": user.username,
+        "email": user.email,
+        "name": user.name,
+        "password": user.get_hashed_password(),
+        "is_active": user.is_active,
+        "is_superuser": user.is_superuser,
+    }
 
-        existing_data = {"users": []}
-        if yaml_file.exists():
-            with open(yaml_file) as f:
-                existing_data = yaml.safe_load(f) or {"users": []}
+    existing_data = {"users": []}
+    if yaml_file.exists():
+        with open(yaml_file) as f:
+            existing_data = yaml.safe_load(f) or {"users": []}
 
-        existing_data["users"].append(user_data)
+    existing_data["users"].append(user_data)
 
-        yaml_file.parent.mkdir(parents=True, exist_ok=True)
-        with open(yaml_file, "w") as f:
-            yaml.dump(existing_data, f, default_flow_style=False)
+    yaml_file.parent.mkdir(parents=True, exist_ok=True)
+    with open(yaml_file, "w") as f:
+        yaml.dump(existing_data, f, default_flow_style=False)
 
-        console.print(f"[green]✅ User saved to {yaml_file}[/green]")
-
-    except Exception as e:
-        console.print(f"[red]❌ Error saving user to YAML: {e}[/red]")
-        raise
+    console.print(f"[green]✅ User saved to {yaml_file}[/green]")
 
 
 def cli_main():
@@ -181,31 +161,17 @@ def cli_main():
         console.print(
             "[yellow]📝 CLI args incomplete, switching to interactive mode[/yellow]"
         )
-        try:
-            user = interactive_mode()
-            # Ask for environment
-            env = Prompt.ask(
-                "🌍 Environment", choices=["dev", "prod", "test", "base"], default="dev"
-            )
-            save_to_yaml(user, env)
-            console.print(
-                f"[green]✅ Interactive: User '{user.username}' created in '{env}' environment[/green]"
-            )
-        except KeyboardInterrupt:
-            console.print("\n[yellow]⚠️ User creation cancelled by user[/yellow]")
-            return
-        except Exception as e:
-            console.print(f"[red]❌ Error during interactive mode: {e}[/red]")
-            return
-
-    except KeyboardInterrupt:
-        console.print("\n[yellow]⚠️ User creation cancelled by user[/yellow]")
-        return
+        user = interactive_mode()
+        # Ask for environment
+        env = Prompt.ask(
+            "🌍 Environment", choices=["dev", "prod", "test", "base"], default="dev"
+        )
+        save_to_yaml(user, env)
+        console.print(
+            f"[green]✅ Interactive: User '{user.username}' created in '{env}' environment[/green]"
+        )
     except SystemExit:
         raise  # Reraise to stop the application as the user expects
-    except Exception as e:
-        console.print(f"[red]❌ Unexpected error: {e}[/red]")
-        return
 
 
 if __name__ == "__main__":

@@ -5,6 +5,7 @@ import time
 from pathlib import Path
 
 import typer
+from argon2 import PasswordHasher
 from cryptography.fernet import Fernet
 from rich.progress import track
 
@@ -309,20 +310,94 @@ JWT_COOKIE_SAMESITE=lax
 """
 
 
+def create_admin_user_file(username: str, hashed_password: str) -> None:
+    """Create initial admin user file."""
+    users_dir = BASE_DIR / "secrets"
+    users_dir.mkdir(exist_ok=True)
+
+    # Create for each environment
+    environments = ["", "dev_", "prod_", "test_"]
+
+    for env_prefix in environments:
+        users_file = users_dir / f"{env_prefix}users.yaml"
+
+        user_content = f"""# Admin user configuration
+users:
+  - username: "{username}"
+    password_hash: "{hashed_password}"
+    roles: ["admin"]
+    active: true
+    created_at: "{time.strftime("%Y-%m-%d %H:%M:%S")}"
+"""
+
+        with users_file.open("w") as f:
+            f.write(user_content)
+
+        typer.echo(f"Created: {users_file}")
+
+
+def create_modules_file() -> None:
+    """Create initial modules configuration."""
+    modules_dir = BASE_DIR / "secrets"
+    modules_dir.mkdir(exist_ok=True)
+
+    # Create for each environment
+    environments = ["", "dev_", "prod_", "test_"]
+
+    for env_prefix in environments:
+        modules_file = modules_dir / f"{env_prefix}modules.yaml"
+
+        modules_content = """# API modules configuration
+modules:
+  - name: "authentication"
+    enabled: true
+    description: "User authentication and authorization"
+  - name: "user_management"
+    enabled: true
+    description: "User management operations"
+  - name: "api_parser"
+    enabled: true
+    description: "API parsing and validation"
+"""
+
+        with modules_file.open("w") as f:
+            f.write(modules_content)
+
+
 @app.command()
 def env_setup():
-    """Pure automatic environment setup - no prompts, just generates environment files."""
-    typer.echo("🚀 Starting automatic environment setup...")
+    """Enhanced automatic environment setup."""
+    typer.echo("🚀 Starting enhanced environment setup...")
 
     # Check for existing files
     existing_files = [name for name, path in ENV_FILES.items() if path.exists()]
 
     if existing_files:
-        typer.echo(f"⚠️  Found existing files: {', '.join(existing_files)}")
-        typer.echo("Existing files will be overwritten.")
+        typer.echo(f"Found existing files: {', '.join(existing_files)}")
+        overwrite = typer.confirm(
+            "Overwrite existing environment files?", default=False
+        )
+        if not overwrite:
+            typer.echo("Skipping environment setup.")
+            return
 
     # Generate secure keys
     keys = generate_secure_keys()
+
+    # Admin user setup
+    pbar_process("Setting up admin configuration...")
+    admin_username = typer.prompt("Admin username", default="admin")
+    admin_password = typer.prompt(
+        "Admin password",
+        default="admin1234",
+        hide_input=True,
+        confirmation_prompt=True,
+    )
+
+    # Hash password
+    pbar_process("Hashing admin password...")
+    ph = PasswordHasher()
+    hashed_password = ph.hash(admin_password)
 
     # Create environment files
     env_contents = {
@@ -342,6 +417,11 @@ def env_setup():
 
         typer.secho(f"✅ Created: {file_path.name}", fg=typer.colors.GREEN)
 
+    # Create admin user and modules files
+    pbar_process("Creating configuration files...")
+    create_admin_user_file(admin_username, hashed_password)
+    create_modules_file()
+
     # Create secrets directory structure
     secrets_dir = BASE_DIR / "secrets" / "keys"
     secrets_dir.mkdir(parents=True, exist_ok=True)
@@ -349,6 +429,7 @@ def env_setup():
     # Summary
     typer.echo("\n🎉 Environment setup completed successfully!")
     typer.echo("\n📋 Summary:")
+    typer.echo(f"   Admin user: {admin_username}")
     typer.echo(f"   Environment files: {len(env_contents)} created")
     typer.echo(f"   Secrets directory: {secrets_dir}")
 
@@ -356,10 +437,6 @@ def env_setup():
     typer.echo("   Set environment variables:")
     typer.echo(f"   export PROD_SECURITY_SECRET_KEY='{keys['security_secret_prod']}'")
     typer.echo(f"   export PROD_JWT_SECRET_KEY='{keys['jwt_secret_prod']}'")
-
-    typer.echo("\n👤 Next steps:")
-    typer.echo("   Use 'python scripts/user_cli_input.py' to create admin users")
-    typer.echo("   Use 'python scripts/modules_cli_input.py' to manage modules")
 
 
 @app.command()
