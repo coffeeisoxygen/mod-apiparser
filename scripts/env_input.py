@@ -5,19 +5,10 @@ import time
 from pathlib import Path
 
 import typer
+from argon2 import PasswordHasher
 from cryptography.fernet import Fernet
 from rich import print
 from rich.progress import track
-
-DEFAULT_UVICORN_CONFIG = {
-    "host": "0.0.0.0",
-    "port": 8000,
-    "reload": True,
-    "log_level": "info",
-    "timeout_keep_alive": 5,
-    "timeout_graceful_shutdown": 5,
-}
-
 
 ENV_NAME = ".env.example"
 ENV_PATH = Path(__file__).resolve().parent.parent / ENV_NAME
@@ -37,6 +28,14 @@ def pbar_generate_keys():
         # Simulate key generation time
         time.sleep(0.02)
     typer.echo("Keys generated successfully.")
+
+
+def pbar_hashing_process():
+    """Progress bar for hashing process."""
+    for _ in track(range(100), description="Hashing process..."):
+        # Simulate hashing time
+        time.sleep(0.02)
+    typer.echo("Hashing process completed successfully.")
 
 
 def generating_keys():
@@ -62,36 +61,25 @@ def main():
             hide_input=True,
             confirmation_prompt=True,
         )
+        pbar_hashing_process()
+        ph = PasswordHasher()
+        hashed_password = ph.hash(userpassword)
+        typer.echo(f"Username admin: {useradmin}")
+        typer.echo(f"Password admin (hashed): {hashed_password}")
         pbar_generate_keys()
         fernet_key, secret_key = generating_keys()
         typer.echo(f"Fernet Key: {fernet_key}")
         typer.echo(f"Secret Key: {secret_key}")
         debug = typer.confirm("Aktifkan debug mode?", default=True)
         app_env = typer.prompt("APP_ENV", default="production")
-        uvicorn_host = typer.prompt("UVICORN_HOST", default="0.0.0.0")
-        uvicorn_port = typer.prompt("UVICORN_PORT", default=8000)
-        uvicorn_reload = typer.confirm("UVICORN_RELOAD?", default=True)
-        uvicorn_log_level = typer.prompt("UVICORN_LOG_LEVEL", default="info")
-        uvicorn_timeout_keep_alive = typer.prompt(
-            "UVICORN_TIMEOUT_KEEP_ALIVE", default=5
-        )
-        uvicorn_timeout_graceful_shutdown = typer.prompt(
-            "UVICORN_TIMEOUT_GRACEFUL_SHUTDOWN", default=5
-        )
 
-        # Compose .env content
+        # Compose .env content (removed uvicorn related variables)
         env_content = f"""APP_DEBUG={debug}
 APP_ENV="{app_env}"
 APP_DECRYPT_KEY="{fernet_key}"
 APP_SECRET_KEY="{secret_key}"
 ADMIN_USER="{useradmin}"
-ADMIN_PASSWORD="{userpassword}"
-UVICORN_HOST="{uvicorn_host}"
-UVICORN_PORT={uvicorn_port}
-UVICORN_RELOAD={uvicorn_reload}
-UVICORN_LOG_LEVEL="{uvicorn_log_level}"
-UVICORN_TIMEOUT_KEEP_ALIVE={uvicorn_timeout_keep_alive}
-UVICORN_TIMEOUT_GRACEFUL_SHUTDOWN={uvicorn_timeout_graceful_shutdown}
+ADMIN_PASSWORD="{hashed_password}"
 """
         with ENV_PATH.open("w") as f:
             f.write(env_content)
