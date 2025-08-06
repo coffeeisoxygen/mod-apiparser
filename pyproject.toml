@@ -95,6 +95,7 @@ lint.ignore = [
     "ANN003",  # **kwargs
     "B008", # unused variable
     "TRY003",  # try-except optimizations
+    "TRY400",  # try-except optimizations
 ]
 
 [tool.ruff.lint.pydocstyle]
