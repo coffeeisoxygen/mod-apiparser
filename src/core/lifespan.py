@@ -3,7 +3,8 @@
 from contextlib import asynccontextmanager
 
 from src.dependencies.dep_settings import get_settings
-from src.mlogger import get_logger, shutdown_logging
+from src.mlogger import shutdown_logging
+from src.utils.path_resolver import PathResolver
 
 PATHUSERS = get_settings().path_users
 PATHMODULES = get_settings().path_modules
@@ -11,11 +12,9 @@ PATHMODULES = get_settings().path_modules
 
 @asynccontextmanager
 async def lifespan(app):  # noqa: ANN001, ARG001, D103, RUF029
-    lifespan_logging = get_logger("lifespan")
-
-    lifespan_logging.info("app is starting")
+    resolver = PathResolver(PATHUSERS, PATHMODULES)
+    resolver.ensure_all()
     yield
-    lifespan_logging.info("app stopped")
 
     # Properly shutdown logging system
     shutdown_logging()
