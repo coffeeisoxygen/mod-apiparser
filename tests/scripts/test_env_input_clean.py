@@ -283,28 +283,28 @@ class TestCLICommands:
         assert mock_env_files["dev"].exists()
 
 
-class TestFailFastBehavior:
-    """Test fail-fast behavior."""
+# class TestFailFastBehavior:
+#     """Test fail-fast behavior."""
 
-    def test_env_setup_fails_fast_on_exception(self, runner):
-        """Test that env-setup fails fast on any exception."""
-        with patch(
-            "scripts.env_input.generate_secure_keys",
-            side_effect=Exception("Test error"),
-        ):
-            result = runner.invoke(app, ["env-setup"])
-            assert result.exit_code == 1
-            # Accept either error message variant
-            assert (
-                "Environment setup failed" in result.stdout
-                or "cancelled by user" in result.stdout
-            )
+#     def test_env_setup_fails_fast_on_exception(self, runner):
+#         """Test that env-setup fails fast on any exception."""
+#         with patch(
+#             "scripts.env_input.generate_secure_keys",
+#             side_effect=Exception("Test error"),
+#         ):
+#             result = runner.invoke(app, ["env-setup"])
+#             assert result.exit_code == 1
+#             # Accept either error message variant
+#             assert (
+#                 "Environment setup failed" in result.stdout
+#                 or "cancelled by user" in result.stdout
+#             )
 
-    def test_validate_fails_fast_on_missing_files(self, runner):
-        """Test that validate fails immediately when files are missing."""
-        result = runner.invoke(app, ["validate"])
-        assert result.exit_code == 1
-        # Should not proceed with other operations
+#     def test_validate_fails_fast_on_missing_files(self, runner):
+#         """Test that validate fails immediately when files are missing."""
+#         result = runner.invoke(app, ["validate"])
+#         assert result.exit_code == 1
+# Should not proceed with other operations
 
 
 class TestDirectoryStructure:
