@@ -4,12 +4,13 @@ from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 
 from src._version import version
+from src.config.settings import AppConfig
 from src.core.lifespan import lifespan
 from src.core.middleware import setup_middlewares
-from src.dependencies.dep_settings import AppConfig, get_settings
+from src.dependencies.dep_settings import AppConfigDep, get_app_config
 
 app = FastAPI(
-    debug=get_settings().debug,
+    debug=get_app_config().debug,
     lifespan=lifespan,
     title="modkit-parser",
     description="dari pada ribet parsing json panjang, pake ini aja biar tenang",
@@ -28,22 +29,27 @@ async def root():
 
 
 @app.get("/info")
-async def info(app_parameters: AppConfig) -> AppConfig:
+async def info(app_config: AppConfigDep) -> AppConfig:
     """Get information about the current application configuration.
 
     This endpoint provides details about the current environment settings.
 
     Args:
-        env_parameters (EnvInfo): The environment settings.
+        app_config (AppConfigDep): The application configuration dependency.
 
     Returns:
-        EnvInfo: The environment settings.
+        AppConfig: The application configuration.
     """
-    return app_parameters
+    return app_config
 
 
 @app.get("/terms", response_class=HTMLResponse)
 async def terms():
+    """Get terms of service page.
+
+    Returns:
+        HTMLResponse: Terms of service in HTML format.
+    """
     md = """
 # Terms of Service
 
