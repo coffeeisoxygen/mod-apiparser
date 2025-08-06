@@ -1,5 +1,7 @@
+import markdown2
 import uvicorn
 from fastapi import FastAPI
+from fastapi.responses import HTMLResponse
 
 from src._version import version
 from src.core.lifespan import lifespan
@@ -13,7 +15,7 @@ app = FastAPI(
     description="dari pada ribet parsing json panjang, pake ini aja biar tenang",
     version=version,
     summary="middleware service antara otomax client dan APi Provider.",
-    terms_of_service="not for commercial use, and dont deploy this service to production without proper security measures.",
+    terms_of_service="/terms",
 )
 setup_middlewares(app=app)
 # app.include_router(api_router)
@@ -38,6 +40,19 @@ async def info(env_parameters: EnvInfo) -> EnvInfo:
         EnvInfo: The environment settings.
     """
     return env_parameters
+
+
+@app.get("/terms", response_class=HTMLResponse)
+async def terms():
+    md = """
+# Terms of Service
+
+_Not for commercial use, and don't deploy this service to production without proper security measures._
+
+- You may not use this for commercial purposes.
+- ... (tambahkan markdown lain sesuai kebutuhan)
+"""
+    return markdown2.markdown(md)
 
 
 if __name__ == "__main__":
