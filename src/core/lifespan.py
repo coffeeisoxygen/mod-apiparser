@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 
 from src.mlogger import shutdown_logging
 from src.repos.rep_user import UserRepository
-from src.service.seeder import SeederService
+from src.service.seeder_service import SeederService
 
 
 @asynccontextmanager
