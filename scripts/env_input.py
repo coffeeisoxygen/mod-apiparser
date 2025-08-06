@@ -1,15 +1,28 @@
-"""Enhanced CLI for automatic environment setup."""
+"""Environment setup CLI - handles ONLY environment configuration.
+
+This module is responsible for:
+- Generating secure keys
+- Creating environment files (.env, .env.dev, .env.prod, .env.test)
+- Setting up directory structure
+
+Does NOT handle:
+- User creation (handled by user_input.py)
+- Module setup (future: module_input.py)
+"""
 
 import secrets
 import time
 from pathlib import Path
 
 import typer
-from argon2 import PasswordHasher
 from cryptography.fernet import Fernet
+from rich.console import Console
 from rich.progress import track
 
-app = typer.Typer()
+app = typer.Typer(
+    name="env-setup", help="Environment configuration setup tool", no_args_is_help=True
+)
+console = Console()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 ENV_FILES = {
@@ -311,29 +324,18 @@ JWT_COOKIE_SAMESITE=lax
 
 
 def create_admin_user_file(username: str, hashed_password: str) -> None:
-    """Create initial admin user file."""
-    users_dir = BASE_DIR / "secrets"
-    users_dir.mkdir(exist_ok=True)
+    """Create initial admin user file.
 
-    # Create for each environment
-    environments = ["", "dev_", "prod_", "test_"]
+    NOTE: This function will be REMOVED and moved to user_input.py
+    Keeping temporarily for backward compatibility.
+    """
+    console.print(
+        "[yellow]⚠️  User creation should be handled by user_input.py[/yellow]"
+    )
+    console.print("[yellow]⚠️  This function is deprecated and will be removed[/yellow]")
 
-    for env_prefix in environments:
-        users_file = users_dir / f"{env_prefix}users.yaml"
-
-        user_content = f"""# Admin user configuration
-users:
-  - username: "{username}"
-    password_hash: "{hashed_password}"
-    roles: ["admin"]
-    active: true
-    created_at: "{time.strftime("%Y-%m-%d %H:%M:%S")}"
-"""
-
-        with users_file.open("w") as f:
-            f.write(user_content)
-
-        typer.echo(f"Created: {users_file}")
+    # Temporarily disabled - should use user_input.py instead
+    raise typer.Exit(1)
 
 
 def create_modules_file() -> None:
@@ -366,87 +368,181 @@ modules:
 
 @app.command()
 def env_setup():
-    """Enhanced automatic environment setup."""
-    typer.echo("🚀 Starting enhanced environment setup...")
+    """Create environment files with secure keys.
+
+    This command ONLY handles environment setup:
+    - Generates secure keys
+    - Creates .env files for all environments
+    - Sets up directory structure
+
+    Does NOT create users - use user_input.py for that.
+    """
+    console.print("[bold blue]🌍 Environment Setup Tool[/bold blue]")
+    console.print("This tool creates environment files with secure keys")
+    console.print(
+        "[yellow]Note: User creation is handled separately by user_input.py[/yellow]\n"
+    )
 
     # Check for existing files
     existing_files = [name for name, path in ENV_FILES.items() if path.exists()]
 
     if existing_files:
-        typer.echo(f"Found existing files: {', '.join(existing_files)}")
+        console.print(
+            f"[yellow]Found existing files: {', '.join(existing_files)}[/yellow]"
+        )
         overwrite = typer.confirm(
             "Overwrite existing environment files?", default=False
         )
         if not overwrite:
-            typer.echo("Skipping environment setup.")
-            return
+            console.print("[red]❌ Environment setup cancelled by user[/red]")
+            raise typer.Exit(1)
 
-    # Generate secure keys
-    keys = generate_secure_keys()
+    try:
+        # Generate secure keys
+        keys = generate_secure_keys()
 
-    # Admin user setup
-    pbar_process("Setting up admin configuration...")
-    admin_username = typer.prompt("Admin username", default="admin")
-    admin_password = typer.prompt(
-        "Admin password",
-        default="admin1234",
-        hide_input=True,
-        confirmation_prompt=True,
-    )
+        # Create environment files
+        env_contents = {
+            "base": create_base_env_content(keys),
+            "dev": create_dev_env_content(keys),
+            "prod": create_prod_env_content(keys),
+            "test": create_test_env_content(keys),
+        }
 
-    # Hash password
-    pbar_process("Hashing admin password...")
-    ph = PasswordHasher()
-    hashed_password = ph.hash(admin_password)
+        # Write environment files
+        pbar_process("Creating environment files...")
+        for env_type, content in env_contents.items():
+            file_path = ENV_FILES["base"] if env_type == "base" else ENV_FILES[env_type]
 
-    # Create environment files
-    env_contents = {
-        "base": create_base_env_content(keys),
-        "dev": create_dev_env_content(keys),
-        "prod": create_prod_env_content(keys),
-        "test": create_test_env_content(keys),
-    }
+            with file_path.open("w") as f:
+                f.write(content)
 
-    # Write environment files
-    pbar_process("Creating environment files...")
-    for env_type, content in env_contents.items():
-        file_path = ENV_FILES["base"] if env_type == "base" else ENV_FILES[env_type]
+            console.print(f"[green]✅ Created: {file_path.name}[/green]")
 
-        with file_path.open("w") as f:
-            f.write(content)
+        # Create basic modules structure
+        pbar_process("Creating modules configuration...")
+        create_modules_file()
 
-        typer.secho(f"✅ Created: {file_path.name}", fg=typer.colors.GREEN)
+        # Create secrets directory structure
+        secrets_dir = BASE_DIR / "secrets" / "keys"
+        secrets_dir.mkdir(parents=True, exist_ok=True)
 
-    # Create admin user and modules files
-    pbar_process("Creating configuration files...")
-    create_admin_user_file(admin_username, hashed_password)
-    create_modules_file()
+        # Summary
+        console.print(
+            "\n[bold green]🎉 Environment setup completed successfully![/bold green]"
+        )
+        console.print("\n[bold]📋 Summary:[/bold]")
+        console.print(f"   Environment files: {len(env_contents)} created")
+        console.print(f"   Secrets directory: {secrets_dir}")
 
-    # Create secrets directory structure
-    secrets_dir = BASE_DIR / "secrets" / "keys"
-    secrets_dir.mkdir(parents=True, exist_ok=True)
+        console.print("\n[bold yellow]📝 Next Steps:[/bold yellow]")
+        console.print("   1. Run user setup: [cyan]uv run scripts/user_input.py[/cyan]")
+        console.print("   2. Start application: [cyan]start.bat[/cyan]")
 
-    # Summary
-    typer.echo("\n🎉 Environment setup completed successfully!")
-    typer.echo("\n📋 Summary:")
-    typer.echo(f"   Admin user: {admin_username}")
-    typer.echo(f"   Environment files: {len(env_contents)} created")
-    typer.echo(f"   Secrets directory: {secrets_dir}")
+        console.print("\n[bold]🔐 Production deployment notes:[/bold]")
+        console.print("   Set environment variables:")
+        console.print(
+            f"   [dim]export PROD_SECURITY_SECRET_KEY='{keys['security_secret_prod']}'[/dim]"
+        )
+        console.print(
+            f"   [dim]export PROD_JWT_SECRET_KEY='{keys['jwt_secret_prod']}'[/dim]"
+        )
 
-    typer.echo("\n🔐 Production deployment notes:")
-    typer.echo("   Set environment variables:")
-    typer.echo(f"   export PROD_SECURITY_SECRET_KEY='{keys['security_secret_prod']}'")
-    typer.echo(f"   export PROD_JWT_SECRET_KEY='{keys['jwt_secret_prod']}'")
+    except Exception as e:
+        console.print(f"[red]❌ Environment setup failed: {e}[/red]")
+        raise typer.Exit(1) from e
+
+
+@app.command()
+def validate():
+    """Validate existing environment configuration.
+
+    Checks if all environment files exist and are properly formatted.
+    """
+    console.print("[bold blue]🔍 Environment Validation[/bold blue]")
+
+    missing_files = []
+    for name, path in ENV_FILES.items():
+        if name == "example":  # Skip example file
+            continue
+
+        if not path.exists():
+            missing_files.append(name)
+            console.print(f"[red]❌ Missing: {name} ({path})[/red]")
+        else:
+            console.print(f"[green]✅ Found: {name}[/green]")
+
+    if missing_files:
+        console.print(
+            f"\n[red]❌ Validation failed: {len(missing_files)} files missing[/red]"
+        )
+        console.print("[yellow]Run: uv run scripts/env_input.py env-setup[/yellow]")
+        raise typer.Exit(1)
+    else:
+        console.print("\n[green]✅ All environment files present[/green]")
+        return True
 
 
 @app.command()
 def show_info():
-    """Show current environment information."""
-    typer.echo("📁 Environment files status:")
+    """Show current environment files status."""
+    console.print("[bold blue]📁 Environment Files Status[/bold blue]")
+
     for name, path in ENV_FILES.items():
-        status = "✅ EXISTS" if path.exists() else "❌ MISSING"
-        typer.echo(f"   {name:10} : {status} - {path}")
+        if name == "example":  # Skip example file
+            continue
+
+        status = (
+            "[green]✅ EXISTS[/green]" if path.exists() else "[red]❌ MISSING[/red]"
+        )
+        size = f"({path.stat().st_size} bytes)" if path.exists() else ""
+        console.print(f"   {name:10} : {status} - {path} {size}")
+
+    # Check secrets directory
+    secrets_dir = BASE_DIR / "secrets"
+    if secrets_dir.exists():
+        console.print(f"\n[green]✅ Secrets directory: {secrets_dir}[/green]")
+        keys_dir = secrets_dir / "keys"
+        if keys_dir.exists():
+            console.print(f"[green]✅ Keys directory: {keys_dir}[/green]")
+        else:
+            console.print(f"[yellow]⚠️  Keys directory missing: {keys_dir}[/yellow]")
+    else:
+        console.print(f"\n[red]❌ Secrets directory missing: {secrets_dir}[/red]")
 
 
+@app.command()
+def clean():
+    """Remove all environment files (use with caution!)."""
+    console.print("[bold red]🧹 Environment Cleanup[/bold red]")
+    console.print("[yellow]This will remove ALL environment files![/yellow]")
+
+    confirm = typer.confirm(
+        "Are you sure you want to delete all environment files?", default=False
+    )
+
+    if not confirm:
+        console.print("[yellow]Cleanup cancelled[/yellow]")
+        return
+
+    removed_files = []
+    for name, path in ENV_FILES.items():
+        if name == "example":  # Skip example file
+            continue
+
+        if path.exists():
+            path.unlink()
+            removed_files.append(name)
+            console.print(f"[red]🗑️  Removed: {name}[/red]")
+
+    if removed_files:
+        console.print(
+            f"\n[green]✅ Removed {len(removed_files)} environment files[/green]"
+        )
+    else:
+        console.print("[yellow]No environment files found to remove[/yellow]")
+
+
+# CLI entry point
 if __name__ == "__main__":
     app()
