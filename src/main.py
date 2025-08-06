@@ -1,18 +1,10 @@
-from functools import lru_cache
-
 import uvicorn
 from fastapi import FastAPI
 
 from src._version import version
-from src.config.settings import Settings
 from src.core.lifespan import lifespan
 from src.core.middleware import setup_middlewares
-
-
-@lru_cache
-def get_settings():
-    return Settings()  # type: ignore
-
+from src.dependencies.dep_settings import EnvInfo
 
 app = FastAPI(
     lifespan=lifespan,
@@ -32,13 +24,18 @@ async def root():
 
 
 @app.get("/info")
-async def info():
-    """Endpoint for retrieving information."""
-    return {
-        "service": get_settings().service,
-        "version": get_settings().version,
-        "environment": get_settings().environment.value,
-    }
+async def info(env_parameters: EnvInfo) -> EnvInfo:
+    """Get information about the current environment.
+
+    This endpoint provides details about the current environment settings.
+
+    Args:
+        env_parameters (EnvInfo): The environment settings.
+
+    Returns:
+        EnvInfo: The environment settings.
+    """
+    return env_parameters
 
 
 if __name__ == "__main__":

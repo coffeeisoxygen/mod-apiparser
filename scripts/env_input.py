@@ -2,27 +2,20 @@
 
 import secrets
 import time
-from enum import StrEnum
 from pathlib import Path
 
-import click
-import click_prompt
 import typer
 from argon2 import PasswordHasher
 from cryptography.fernet import Fernet
 from rich import print
 from rich.progress import track
 
-ENV_NAME = ".env.example"
+ENV_NAME = ".env"
 ENV_PATH = Path(__file__).resolve().parent.parent / ENV_NAME
 
-
-class EnvironmentEnum(StrEnum):
-    """Enumeration for environment types."""
-
-    PRODUCTION = "production"
-    DEVELOPMENT = "development"
-    TESTING = "testing"
+# Static key values as per requirements
+STATIC_KEY_DECRYPT = "X1VPc29aTE5XU0ZsNzhGSXY2QTN1SHh5WjltU1JPN0hfZmZjSWx0cFNJMD0="
+STATIC_KEY_SECRET = "a0f6a727454c1450c2a20c7f6ee0118311c5759ed9b4c709523abad9fdd1a06"
 
 
 def pbar_load_default():
@@ -56,15 +49,7 @@ def generating_keys():
     return fernet_key, secret_key
 
 
-class Command(typer.core.TyperCommand):
-    def __call__(self, *args, **kwargs) -> None:
-        for p in self.params:
-            if isinstance(p, click.Option) and isinstance(p.type, click.Choice):
-                p.__class__ = click_prompt.ChoiceOption
-        super().__call__(*args, **kwargs)
-
-
-app = typer.Typer(cls=Command)
+app = typer.Typer()
 
 
 @app.command()
@@ -89,40 +74,28 @@ def env_setup():
 
     if create_env:
         pbar_load_default()
-        typer.echo("=== Konfigurasi .env, Masukkan semua data yang diperlukan. ===")
-        useradmin = typer.prompt("Masukan username admin", default="admin")
-        userpassword = typer.prompt(
+        typer.echo("=== Konfigurasi .env, Masukkan username dan password admin. ===")
+        admin_username = typer.prompt("Masukan username admin", default="admin")
+        admin_password = typer.prompt(
             text="Masukan password admin",
-            default="admin",
+            default="admin1234",
             hide_input=True,
             confirmation_prompt=True,
         )
         pbar_hashing_process()
         ph = PasswordHasher()
-        hashed_password = ph.hash(userpassword)
-        typer.echo(f"Username admin: {useradmin}")
+        hashed_password = ph.hash(admin_password)
+        typer.echo(f"Username admin: {admin_username}")
         typer.echo(f"Password admin (hashed): {hashed_password}")
-        pbar_generate_keys()
-        fernet_key, secret_key = generating_keys()
-        typer.echo(f"Fernet Key: {fernet_key}")
-        typer.echo(f"Secret Key: {secret_key}")
-        typer.echo("generating Algorithm: HS256")
-        debug = typer.confirm("Aktifkan debug mode?", default=True)
-        env_choice = click.Choice([e.value for e in EnvironmentEnum])
-        app_env = typer.prompt(
-            text="Pilih environment",
-            type=env_choice,
-            default=EnvironmentEnum.PRODUCTION.value,
-            show_choices=True,
-        )
 
-        env_content = f"""APP_DEBUG={debug}
-APP_ENV="{app_env}"
-APP_DECRYPT_KEY="{fernet_key}"
-APP_SECRET_KEY="{secret_key}"
-APP_HASH_ALGORITHM="HS256"
-ADMIN_USER="{useradmin}"
+        env_content = f"""APP_DEBUG=False
+APP_ENV="production"
+ADMIN_USERNAME="{admin_username}"
 ADMIN_PASSWORD="{hashed_password}"
+KEY_DECRYPT="{STATIC_KEY_DECRYPT}"
+KEY_SECRET="{STATIC_KEY_SECRET}"
+KEY_ALGORITHM="HS256"
+PATH_ACCOUNTS="accounts.yaml"
 """
         with ENV_PATH.open("w") as f:
             f.write(env_content)
