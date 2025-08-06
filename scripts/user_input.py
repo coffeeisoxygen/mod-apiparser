@@ -1,19 +1,28 @@
-"""Simple CLI implementation using pydantic-settings."""
+"""Admin user creation CLI - focused on creating admin accounts.
+
+This module is responsible for:
+- Creating admin user accounts only
+- Simple prompts for username, email, name, password
+- Auto-sets is_active=True and is_superuser=True
+"""
 
 from pathlib import Path
 
+import typer
 import yaml
-from pydantic import EmailStr, Field, ValidationError
-from pydantic_settings import BaseSettings, CliApp
+from pydantic import BaseModel, EmailStr, Field, ValidationError
 from rich.console import Console
 from rich.prompt import Prompt
 from src.service.hasher_service import HasherService
 
+app = typer.Typer(
+    name="admin-create", help="Admin user creation tool", no_args_is_help=True
+)
 console = Console()
 
 
-class UserInput(BaseSettings):
-    """User input settings with CLI support."""
+class AdminUserInput(BaseModel):
+    """Admin user input model with validation."""
 
     username: str = Field(
         min_length=3,
@@ -26,36 +35,43 @@ class UserInput(BaseSettings):
         min_length=2, max_length=100, description="Full name (2-100 characters)"
     )
     password: str = Field(min_length=6, description="Password (minimum 6 characters)")
-    is_active: bool = Field(default=True, description="User active status")
-    is_superuser: bool = Field(default=False, description="Superuser privileges")
 
-    class Config:
-        """Pydantic config for CLI."""
-
-        env_prefix = "USER_"
-        cli_prog_name = "user-create"
+    # Auto-set admin properties
+    is_active: bool = Field(
+        default=True, description="User active status (always True for admin)"
+    )
+    is_superuser: bool = Field(
+        default=True, description="Superuser privileges (always True for admin)"
+    )
 
     def get_hashed_password(self) -> str:
         """Get hashed password using HasherService."""
         return HasherService.hash_password(self.password)
 
 
-def prompt_for_field(
-    field_name: str, description: str, default_value: object = None
-) -> str | bool:
+def prompt_for_field(field_name: str, description: str, default_value: str = "") -> str:
     """Prompt for single field with validation loop."""
     while True:
         try:
             if field_name == "password":
                 value = Prompt.ask(f"🔒 {description}", password=True)
-            elif isinstance(default_value, bool):
-                value = _prompt_bool_field(description, default_value)
             else:
-                value = _prompt_default_field(description, default_value)
-            # Test validation
-            test_data = get_test_data()
+                prompt_text = f"📝 {description}"
+                if default_value:
+                    prompt_text += f" [{default_value}]"
+                value = Prompt.ask(prompt_text, default=default_value)
+
+            # Test validation with dummy data
+            test_data = {
+                "username": "testuser",
+                "email": "test@example.com",
+                "name": "Test User",
+                "password": "password123",
+                "is_active": True,  # Ensure correct type
+                "is_superuser": True,  # Ensure correct type
+            }
             test_data[field_name] = value
-            UserInput(**test_data)
+            AdminUserInput(**test_data)
         except ValidationError as e:
             error_msg = e.errors()[0]["msg"] if e.errors() else "Invalid input"
             console.print(f"[red]❌ {error_msg}[/red]")
@@ -63,75 +79,77 @@ def prompt_for_field(
             return value
 
 
-def _prompt_bool_field(description: str, default_value: bool) -> bool:
-    choice = Prompt.ask(
-        f"{'✅' if default_value else '❌'} {description}",
-        choices=["y", "n"],
-        default="y" if default_value else "n",
-    )
-    return choice.lower() == "y"
+@app.command()
+def create_admin(
+    username: str = typer.Option(None, "--username", "-u", help="Admin username"),
+    email: str = typer.Option(None, "--email", "-e", help="Admin email"),
+    name: str = typer.Option(None, "--name", "-n", help="Admin full name"),
+    password: str = typer.Option(None, "--password", "-p", help="Admin password"),
+    env: str = typer.Option("dev", "--env", help="Environment (dev/prod/test)"),
+):
+    """Create admin user account.
 
+    Creates an admin user with superuser privileges.
+    Auto-sets is_active=True and is_superuser=True.
+    """
+    console.print("[bold blue]👤 Admin User Creation[/bold blue]")
+    console.print("[yellow]Creating admin account with full privileges[/yellow]\n")
 
-def _prompt_default_field(description: str, default_value: object) -> str:
-    prompt_text = f"📝 {description}"
-    if default_value:
-        prompt_text += f" [{default_value}]"
-    return Prompt.ask(prompt_text, default=str(default_value) if default_value else "")
-
-
-def get_test_data() -> dict:
-    """Get minimal test data for validation."""
-    return {
-        "username": "testuser",
-        "email": "test@example.com",
-        "name": "Test User",
-        "password": "password123",
-        "is_active": True,
-        "is_superuser": False,
-    }
-
-
-def interactive_mode() -> UserInput:
-    """Interactive user creation."""
-    console.print("[bold blue]👤 Interactive User Creation[/bold blue]")
-
-    fields = UserInput.model_fields
+    # Collect data interactively if not provided via CLI
     data = {}
 
-    data["username"] = prompt_for_field(
-        "username", fields["username"].description or "", "admin"
+    fields = AdminUserInput.model_fields
+
+    data["username"] = username or prompt_for_field(
+        "username", fields["username"].description or "Admin username", "admin"
     )
-    data["email"] = prompt_for_field(
-        "email", fields["email"].description or "", "admin@example.com"
+    data["email"] = email or prompt_for_field(
+        "email", fields["email"].description or "Admin email", "admin@example.com"
     )
-    data["name"] = prompt_for_field(
-        "name", fields["name"].description or "", "Administrator"
+    data["name"] = name or prompt_for_field(
+        "name", fields["name"].description or "Admin full name", "Administrator"
     )
-    data["password"] = prompt_for_field(
-        "password", fields["password"].description or ""
-    )
-    data["is_active"] = prompt_for_field(
-        "is_active", fields["is_active"].description or "", True
-    )
-    data["is_superuser"] = prompt_for_field(
-        "is_superuser", fields["is_superuser"].description or "", False
+    data["password"] = password or prompt_for_field(
+        "password", fields["password"].description or "Admin password"
     )
 
-    return UserInput(**data)
+    try:
+        # Create admin user (automatically sets is_active=True, is_superuser=True)
+        admin_user = AdminUserInput(**data)
+
+        # Save to YAML
+        save_admin_to_yaml(admin_user, env)
+
+        console.print(
+            f"\n[bold green]✅ Admin user '{admin_user.username}' created successfully![/bold green]"
+        )
+        console.print(f"[green]📁 Environment: {env}[/green]")
+        console.print("[green]🔑 Superuser privileges: ✅ Enabled[/green]")
+        console.print(f"[green]📧 Email: {admin_user.email}[/green]")
+
+    except typer.Abort:
+        console.print("\n[yellow]❌ Admin creation cancelled by user[/yellow]")
+        raise typer.Exit(1) from None
+    except ValidationError as e:
+        console.print(f"[red]❌ Validation error: {e}[/red]")
+        raise typer.Exit(1) from e
+    except Exception as e:
+        console.print(f"[red]❌ Failed to create admin user: {e}[/red]")
+        raise typer.Exit(1) from e
 
 
-def save_to_yaml(user: UserInput, env: str = "dev") -> None:
-    """Save user to YAML file."""
+def save_admin_to_yaml(admin_user: AdminUserInput, env: str = "dev") -> None:
+    """Save admin user to YAML file."""
     base_dir = Path(__file__).resolve().parent.parent
     yaml_file = base_dir / "secrets" / f"{env}_users.yaml"
 
-    user_data = {
-        "username": user.username,
-        "email": user.email,
-        "name": user.name,
-        "password": user.get_hashed_password(),
-        "is_active": user.is_active,
-        "is_superuser": user.is_superuser,
+    admin_data = {
+        "username": admin_user.username,
+        "email": admin_user.email,
+        "name": admin_user.name,
+        "password": admin_user.get_hashed_password(),
+        "is_active": True,  # Always True for admin
+        "is_superuser": True,  # Always True for admin
     }
 
     existing_data = {"users": []}
@@ -139,40 +157,65 @@ def save_to_yaml(user: UserInput, env: str = "dev") -> None:
         with open(yaml_file) as f:
             existing_data = yaml.safe_load(f) or {"users": []}
 
-    existing_data["users"].append(user_data)
+    # Check if admin user already exists
+    for existing_user in existing_data["users"]:
+        if existing_user.get("username") == admin_user.username:
+            console.print(
+                f"[yellow]⚠️  User '{admin_user.username}' already exists. Updating...[/yellow]"
+            )
+            existing_user.update(admin_data)
+            break
+    else:
+        existing_data["users"].append(admin_data)
 
+    # Ensure directory exists
     yaml_file.parent.mkdir(parents=True, exist_ok=True)
+
     with open(yaml_file, "w") as f:
         yaml.dump(existing_data, f, default_flow_style=False)
 
-    console.print(f"[green]✅ User saved to {yaml_file}[/green]")
+    console.print(f"[green]✅ Admin user saved to {yaml_file}[/green]")
 
 
-def cli_main():
-    """Main CLI function."""
-    try:
-        # Try CLI mode first
-        user = CliApp.run(UserInput, cli_exit_on_error=False)
-        save_to_yaml(user)
-        console.print(f"[green]✅ CLI: User '{user.username}' created[/green]")
+@app.command()
+def show_info():
+    """Show information about existing users."""
+    console.print("[bold blue]👥 User Information[/bold blue]")
 
-    except ValidationError:
-        # If CLI args are incomplete, switch to interactive mode
-        console.print(
-            "[yellow]📝 CLI args incomplete, switching to interactive mode[/yellow]"
-        )
-        user = interactive_mode()
-        # Ask for environment
-        env = Prompt.ask(
-            "🌍 Environment", choices=["dev", "prod", "test", "base"], default="dev"
-        )
-        save_to_yaml(user, env)
-        console.print(
-            f"[green]✅ Interactive: User '{user.username}' created in '{env}' environment[/green]"
-        )
-    except SystemExit:
-        raise  # Reraise to stop the application as the user expects
+    base_dir = Path(__file__).resolve().parent.parent
+    environments = ["dev", "prod", "test"]
+
+    for env in environments:
+        _show_env_users(base_dir, env)
+
+
+def _show_env_users(base_dir: Path, env: str) -> None:
+    """Show users for a specific environment."""
+    yaml_file = base_dir / "secrets" / f"{env}_users.yaml"
+    console.print(f"\n[bold]{env.upper()} Environment:[/bold]")
+
+    if not yaml_file.exists():
+        console.print("  [red]❌ No user file found[/red]")
+        return
+
+    with open(yaml_file) as f:
+        data = yaml.safe_load(f) or {"users": []}
+
+    users = data.get("users", [])
+    if not users:
+        console.print("  [dim]No users found[/dim]")
+        return
+
+    for user in users:
+        _display_user_info(user)
+
+
+def _display_user_info(user: dict) -> None:
+    """Display single user information."""
+    status = "🔑 ADMIN" if user.get("is_superuser") else "👤 USER"
+    active = "✅" if user.get("is_active") else "❌"
+    console.print(f"  {status} {active} {user.get('username')} ({user.get('email')})")
 
 
 if __name__ == "__main__":
-    cli_main()
+    app()
