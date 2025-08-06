@@ -3,7 +3,7 @@ import pathlib
 import yaml
 
 from src.dependencies.dep_settings import get_settings
-from src.domain.user.sch_user import UserSeeding
+from src.domain.user.sch_user import UserInDB
 from src.utils.hasher_service import HasherService
 
 DEFAULT_USERS = [
@@ -45,23 +45,46 @@ DEFAULT_MODULES = [
 
 class SeederService:
     def __init__(self):
-        self.path_users = pathlib.Path(get_settings().path_users)
+        settings = get_settings()
+        self.path_users = pathlib.Path(settings.path_users)
+        self.path_modules = pathlib.Path(settings.path_modules)
+
+    def seed(self):
+        self.create_default_users()
+        self.create_default_modules()
+
+    @staticmethod
+    def _ensure_parent_dir(path: pathlib.Path) -> None:
+        if not path.parent.exists():
+            path.parent.mkdir(parents=True, exist_ok=True)
 
     def create_default_users(self):
         """Seed users file with default admin if not exists or empty."""
-        if not self.path_users.exists() or self.path_users.stat().st_size == 0:
-            # check if directory exists, if not create it
-            self.path_users.parent.mkdir(parents=True, exist_ok=True)
+        path = self.path_users
+        if not path.exists() or path.stat().st_size == 0:
+            self._ensure_parent_dir(path)
             users = []
             for user in DEFAULT_USERS:
-                # Validasi dan normalisasi dengan schema
-                user_obj = UserSeeding(**user)
+                user_obj = UserInDB(**user)
                 user_dict = user_obj.model_dump()
                 user_dict["password"] = HasherService.hash_password(
                     user_dict["password"]
                 )
                 users.append(user_dict)
-            with open(self.path_users, "w", encoding="utf-8") as f:
+            with open(path, "w", encoding="utf-8") as f:
                 yaml.dump(
                     {"users": users}, f, sort_keys=False, default_flow_style=False
+                )
+
+    def create_default_modules(self):
+        """Seed modules file with default modules if not exists or empty."""
+        path = self.path_modules
+        if not path.exists() or path.stat().st_size == 0:
+            self._ensure_parent_dir(path)
+            with open(path, "w", encoding="utf-8") as f:
+                yaml.dump(
+                    {"modules": DEFAULT_MODULES},
+                    f,
+                    sort_keys=False,
+                    default_flow_style=False,
                 )

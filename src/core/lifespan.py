@@ -8,7 +8,7 @@ from src.service.seeder import SeederService
 
 @asynccontextmanager
 async def lifespan(app):  # noqa: ANN001, ARG001, D103, RUF029
-    SeederService().create_default_users()
+    SeederService().seed()
     yield
 
     # Properly shutdown logging system
