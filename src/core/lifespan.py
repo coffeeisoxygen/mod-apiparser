@@ -5,13 +5,24 @@ from contextlib import asynccontextmanager
 
 from src.dependencies.dep_settings import get_settings
 from src.mlogger import shutdown_logging
-from src.repos.rep_user import UserRepository
+from src.repos import ModuleRepository, UserRepository
 from src.service.seeder_service import SeederService
 from src.service.watcher import FileWatcher
 
 
 @asynccontextmanager
-async def lifespan(app):
+async def lifespan(app):  # noqa: ANN001, RUF029
+    """Manages the lifespan of the FastAPI application.
+
+    This includes startup and shutdown logic, such as initializing
+    repositories and starting background tasks.
+
+    Args:
+        app (_type_): The FastAPI application instance.
+
+    Yields:
+        _type_: Yields control back to the application after startup logic is complete.
+    """
     settings = get_settings()
 
     # --- Startup Logic ---
@@ -21,7 +32,8 @@ async def lifespan(app):
     # 2. Inisialisasi UserRepository dan simpan di app.state
     user_repo = UserRepository()
     app.state.user_repo = user_repo
-
+    module_repo = ModuleRepository()
+    app.state.module_repo = module_repo
     # 3. Inisialisasi dan jalankan watcher service
     user_file_path = pathlib.Path(settings.path_users)
     watcher = FileWatcher(file_path=user_file_path, callback=user_repo.reload)
