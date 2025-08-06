@@ -34,16 +34,21 @@ async def info(app_parameters: AppConfig) -> AppConfig:
     This endpoint provides details about the current environment settings.
 
     Args:
-        env_parameters (EnvInfo): The environment settings.
+        app_parameters (AppConfig): The application configuration settings.
 
     Returns:
-        EnvInfo: The environment settings.
+        AppConfig: The application configuration settings.
     """
     return app_parameters
 
 
 @app.get("/terms", response_class=HTMLResponse)
 async def terms():
+    """Get terms of service page.
+    
+    Returns:
+        HTMLResponse: Terms of service content in HTML format.
+    """
     md = """
 # Terms of Service
 
