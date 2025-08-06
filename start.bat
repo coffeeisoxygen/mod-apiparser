@@ -22,6 +22,7 @@ IF %ERRORLEVEL% NEQ 0 (
     exit /b %ERRORLEVEL%
 )
 
+REM check apakah accounts.yaml sudah ada, jika belum buat,
 REM Step 3: Jalankan FastAPI in development mode
 uv run uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
 
