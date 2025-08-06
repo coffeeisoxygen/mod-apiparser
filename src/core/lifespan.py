@@ -2,7 +2,11 @@
 
 from contextlib import asynccontextmanager
 
+from src.dependencies.dep_settings import get_settings
 from src.mlogger import get_logger, shutdown_logging
+
+PATHUSERS = get_settings().path_users
+PATHMODULES = get_settings().path_modules
 
 
 @asynccontextmanager

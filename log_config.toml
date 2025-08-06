@@ -14,7 +14,7 @@ enabled = true
 level = "INFO"  # Can be different from global level
 format = "simple"  # Options: simple, full, minimal, custom
 colorize = true  # Enable colors in terminal
-diagnose = false  # Enable detailed diagnosis for terminal
+diagnose = false  # Enable detailed diagnosis for terminalPsni
 enqueue = true  # Async logging for better performance
 
 [mlog.file]
