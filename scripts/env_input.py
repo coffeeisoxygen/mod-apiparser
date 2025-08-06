@@ -309,6 +309,7 @@ JWT_COOKIE_SAMESITE=lax
 """
 
 
+
 @app.command()
 def env_setup():
     """Pure automatic environment setup - no prompts, just generates environment files."""
