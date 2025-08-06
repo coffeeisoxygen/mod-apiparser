@@ -26,6 +26,23 @@ DEFAULT_USERS = [
 ]
 
 
+DEFAULT_MODULES = [
+    {
+        "provider": "",
+        "accountid": "",
+        "username": "",
+        "pin": "",
+        "password": "",
+        "msisdn": "",
+        "email": "",
+        "base_url": "",
+        "is_active": "",
+        "name": "",
+        "description": "",
+    }
+]
+
+
 class SeederService:
     def __init__(self):
         self.path_users = pathlib.Path(get_settings().path_users)

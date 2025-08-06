@@ -114,6 +114,24 @@ class AccountCreate(AccountCredential):
             raise ValueError("provider harus salah satu dari EnumAPIProvider")  # noqa: TRY004
         return v
 
+    @field_validator("is_active", mode="before")
+    @classmethod
+    def validate_is_active(cls, v: bool | str | None) -> bool:
+        """Accepts bool, "true", "false", "", or None.
+
+        Converts to bool: "" or None -> False, "true"/True -> True, "false"/False -> False.
+        """
+        if v is True or v is False:
+            return v
+        if not v:
+            return False
+        if isinstance(v, str):
+            if v.lower() == "true":
+                return True
+            if v.lower() == "false":
+                return False
+        return bool(v)
+
 
 class AccountRead(AccountCreate):
     pass
