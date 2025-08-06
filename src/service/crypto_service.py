@@ -80,6 +80,7 @@ class CryptoService:
         try:
             # Try to decrypt - if successful, it's encrypted
             self.decrypt(data)
-            return True
         except CryptoServiceError:
             return False
+        else:
+            return True
