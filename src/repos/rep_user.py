@@ -31,7 +31,7 @@ class UserRepository:
                     users_loaded=len(users_list),
                 )
                 return users_list
-        except (FileNotFoundError, ValidationError, Exception) as e:
+        except (ValidationError, Exception) as e:
             operation_logger.error(
                 "Failed to load or validate YAML file.",
                 file=self.file_path,
