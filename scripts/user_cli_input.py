@@ -23,6 +23,7 @@ class UserInput(BaseSettings):
     )
     email: EmailStr = Field(description="Valid email address")
     name: str = Field(
+        
         min_length=2, max_length=100, description="Full name (2-100 characters)"
     )
     password: str = Field(min_length=6, description="Password (minimum 6 characters)")
