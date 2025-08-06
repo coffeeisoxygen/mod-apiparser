@@ -15,7 +15,7 @@ level = "DEBUG"  # Can be different from global level
 format = "simple"  # Options: simple, full, minimal, custom
 colorize = true  # Enable colors in terminal
 diagnose = true  # Enable detailed diagnosis for terminal
-enqueue = true  # Async logging for better performance
+enqueue = false  # Async logging for better performance
 
 [mlog.file]
 # File logging configuration

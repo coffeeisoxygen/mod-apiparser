@@ -61,16 +61,13 @@ class ModuleRepository:
             logger.info("ModuleRepository berhasil dimuat ulang.")
         except AppException.YamlReloadExceptionError as e:
             # Jika terjadi error saat memuat ulang, log tapi biarkan data lama tetap ada
-            logger.error(
-                "Gagal memuat ulang data, menggunakan data lama.",
-                error=e.message,
-                context=e.context,
+            logger.bind(error=e.message, context=e.context).error(
+                "Gagal memuat ulang data, menggunakan data lama."
             )
         except Exception as e:
             # Blok fallback untuk error tak terduga
-            logger.error(
-                "Gagal memuat ulang data karena error tak terduga, menggunakan data lama.",
-                exception=e,
+            logger.bind(exception=str(e)).error(
+                "Gagal memuat ulang data karena error tak terduga, menggunakan data lama."
             )
 
     def get_module_by_id(self, module_id: str) -> ModuleInDB | None:
