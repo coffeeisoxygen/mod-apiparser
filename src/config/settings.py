@@ -1,3 +1,4 @@
+import os
 from enum import StrEnum
 from pathlib import Path
 
@@ -5,6 +6,27 @@ from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from src._version import __version__ as version
+
+
+def get_env_files() -> tuple[str, ...]:
+    """Get environment files based on APP_ENV variable.
+
+    Returns tuple of env files in loading order:
+    - Always loads .env first (base configuration)
+    - Then loads environment-specific file based on APP_ENV
+
+    This function is for runtime determination of env files.
+    """
+    env = os.getenv("APP_ENV", "development").lower()
+
+    base_files = [".env"]
+
+    if env == "production":
+        return (*base_files, ".env.prod")
+    elif env == "testing":
+        return (*base_files, ".env.test")
+    else:  # development (default)
+        return (*base_files, ".env.dev")
 
 
 class EnvironmentEnum(StrEnum):
@@ -68,10 +90,14 @@ class PathConfig(BaseModel):
 
 
 class Settings(BaseSettings):
-    """Application settings with nested configuration."""
+    """Application settings with nested configuration.
+
+    Environment files are loaded dynamically at instantiation
+    based on the _env_file parameter passed to constructor.
+    """
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        # No hardcoded env_file - will be specified at instantiation
         env_file_encoding="utf-8",
         case_sensitive=False,
         extra="allow",
