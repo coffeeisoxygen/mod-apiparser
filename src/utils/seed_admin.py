@@ -22,6 +22,19 @@ DEFAULT_USERS = [
     },
 ]
 
+DEFAULT_MODULES = [
+    {
+        "name": "module1",
+        "description": "This is module 1",
+        "is_active": True,
+    },
+    {
+        "name": "module2",
+        "description": "This is module 2",
+        "is_active": True,
+    },
+]
+
 
 class SeederService:
     def __init__(self):
@@ -30,6 +43,8 @@ class SeederService:
     def seed(self):
         """Seed users file with default admin if not exists or empty."""
         if not self.path_users.exists() or self.path_users.stat().st_size == 0:
+            # check if directory exists, if not create it
+            self.path_users.parent.mkdir(parents=True, exist_ok=True)
             users = []
             for user in DEFAULT_USERS:
                 user_copy = user.copy()
