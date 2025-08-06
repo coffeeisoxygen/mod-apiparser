@@ -3,7 +3,7 @@
 from contextlib import asynccontextmanager
 
 from src.mlogger import shutdown_logging
-from src.utils.seed_admin import SeederService
+from src.service.seed_admin import SeederService
 
 
 @asynccontextmanager

@@ -3,12 +3,14 @@ import pathlib
 import yaml
 
 from src.dependencies.dep_settings import get_settings
+from src.domain.user.sch_user import UserSeeding
 from src.utils.hasher_service import HasherService
 
 DEFAULT_USERS = [
     {
         "username": "admin",
         "password": "admin123",
+        "name": "Administrator",
         "email": "admin@example.com",
         "is_active": True,
         "is_superuser": True,
@@ -16,6 +18,7 @@ DEFAULT_USERS = [
     {
         "username": "user1",
         "password": "user123",
+        "name": "User One",
         "email": "user1@example.com",
         "is_active": True,
         "is_superuser": True,
@@ -47,11 +50,13 @@ class SeederService:
             self.path_users.parent.mkdir(parents=True, exist_ok=True)
             users = []
             for user in DEFAULT_USERS:
-                user_copy = user.copy()
-                user_copy["password"] = HasherService.hash_password(
-                    user_copy["password"]
+                # Validasi dan normalisasi dengan schema
+                user_obj = UserSeeding(**user)
+                user_dict = user_obj.model_dump()
+                user_dict["password"] = HasherService.hash_password(
+                    user_dict["password"]
                 )
-                users.append(user_copy)
+                users.append(user_dict)
             with open(self.path_users, "w", encoding="utf-8") as f:
                 yaml.dump(
                     {"users": users}, f, sort_keys=False, default_flow_style=False
