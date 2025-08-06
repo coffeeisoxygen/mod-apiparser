@@ -181,8 +181,13 @@ class TestCLICommands:
         assert result.exit_code == 0
         assert "Environment Files Status" in result.stdout
 
-    def test_show_info_shows_missing_files(self, runner):
+    def test_show_info_shows_missing_files(self, runner, mock_env_files):
         """Test show-info correctly identifies missing files."""
+        # Ensure files don't exist in temp directory
+        for path in mock_env_files.values():
+            if path.exists():
+                path.unlink()
+
         result = runner.invoke(app, ["show-info"])
         assert result.exit_code == 0
         assert "❌ MISSING" in result.stdout
@@ -196,8 +201,13 @@ class TestCLICommands:
         assert result.exit_code == 0
         assert "✅ EXISTS" in result.stdout
 
-    def test_validate_command_fails_with_missing_files(self, runner):
+    def test_validate_command_fails_with_missing_files(self, runner, mock_env_files):
         """Test validate command fails when files are missing."""
+        # Ensure files don't exist in temp directory
+        for path in mock_env_files.values():
+            if path.exists():
+                path.unlink()
+
         result = runner.invoke(app, ["validate"])
         assert result.exit_code == 1
         assert "Validation failed" in result.stdout
@@ -278,8 +288,13 @@ class TestCLICommands:
 class TestFailFastBehavior:
     """Test fail-fast behavior."""
 
-    def test_env_setup_fails_fast_on_exception(self, runner):
+    def test_env_setup_fails_fast_on_exception(self, runner, mock_env_files):
         """Test that env-setup fails fast on any exception."""
+        # Ensure no existing files to avoid confirmation prompt
+        for path in mock_env_files.values():
+            if path.exists():
+                path.unlink()
+
         with patch(
             "scripts.env_input.generate_secure_keys",
             side_effect=Exception("Test error"),
@@ -288,8 +303,13 @@ class TestFailFastBehavior:
             assert result.exit_code == 1
             assert "Environment setup failed" in result.stdout
 
-    def test_validate_fails_fast_on_missing_files(self, runner):
+    def test_validate_fails_fast_on_missing_files(self, runner, mock_env_files):
         """Test that validate fails immediately when files are missing."""
+        # Ensure files don't exist in temp directory
+        for path in mock_env_files.values():
+            if path.exists():
+                path.unlink()
+
         result = runner.invoke(app, ["validate"])
         assert result.exit_code == 1
         # Should not proceed with other operations
