@@ -54,8 +54,8 @@ redact_replacement = "[REDACTED]"
 [mlog.bind_context]
 # Default context attached to all log messages
 service = "mod-apiparser"
-version = "1.0.0"
-environment = "development"
+# version = "1.0.0"
+# environment = "development"
 
 # Advanced features (commented out, ready for future use)
 # [mlog.sampling]

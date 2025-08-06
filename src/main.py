@@ -4,14 +4,16 @@ from fastapi import FastAPI
 from src._version import version
 from src.core.lifespan import lifespan
 from src.core.middleware import setup_middlewares
-from src.dependencies.dep_settings import EnvInfo
+from src.dependencies.dep_settings import EnvInfo, get_settings
 
 app = FastAPI(
+    debug=get_settings().debug,
     lifespan=lifespan,
     title="modkit-parser",
     description="dari pada ribet parsing json panjang, pake ini aja biar tenang",
     version=version,
     summary="middleware service antara otomax client dan APi Provider.",
+    terms_of_service="not for commercial use, and dont deploy this service to production without proper security measures.",
 )
 setup_middlewares(app=app)
 # app.include_router(api_router)
