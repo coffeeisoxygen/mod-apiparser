@@ -1,6 +1,7 @@
-"""schemas Untuk Accounts, supported many API providers."""
+"""schemas Untuk Modules, supported many API providers."""
 
 import re
+from datetime import datetime
 from enum import StrEnum
 
 from pydantic import (
@@ -24,10 +25,10 @@ class EnumAPIProvider(StrEnum):
 
 
 # REGEX For AccountID (alphanumeric + underscore, 1-10 chars)
-VALID_ACCOUNTID_REGEX = re.compile(r"^\w{1,10}$")
+VALID_MODULEID_REGEX = re.compile(r"^\w{1,10}$")
 
 
-class AccountConfig(BaseModel):
+class ModuleConfig(BaseModel):
     """schemas base yg akan di inherit oleh schemas lain."""
 
     model_config = ConfigDict(
@@ -37,14 +38,14 @@ class AccountConfig(BaseModel):
     )
 
 
-class AccountCredential(AccountConfig):
-    """schemas untuk credential akun."""
+class ModuleCredential(ModuleConfig):
+    """schemas untuk credential module."""
 
-    accountid: str = Field(
+    moduleid: str = Field(
         description="ini adalah id unik yg akan di hit oleh client (alphanumeric/underscore, 1-10 karakter)",
-        examples=["account1", "account2", "account3"],
-        frozen=True,  # immutable field klo mau ganti better hapus account ini dan buat baru
-        json_schema_extra={"example": "account1"},
+        examples=["module1", "module2", "module3"],
+        frozen=True,  # immutable field klo mau ganti better hapus module ini dan buat baru
+        json_schema_extra={"example": "module1"},
     )
 
     username: SecretStr = Field(
@@ -74,17 +75,17 @@ class AccountCredential(AccountConfig):
         json_schema_extra={"example": "http://10.0.0.3:10003/"},
     )
 
-    @field_validator("accountid")
+    @field_validator("moduleid")
     @classmethod
-    def validate_accountid(cls, v: str) -> str:
-        """Validasi accountid harus sesuai regex."""
-        if not VALID_ACCOUNTID_REGEX.match(v):
-            raise ValueError("accountid harus alphanumeric/underscore, 1-10 karakter")
+    def validate_moduleid(cls, v: str) -> str:
+        """Validasi moduleid harus sesuai regex."""
+        if not VALID_MODULEID_REGEX.match(v):
+            raise ValueError("moduleid harus alphanumeric/underscore, 1-10 karakter")
         return v
 
 
-class AccountCreate(AccountCredential):
-    """schemas untuk membuat akun baru."""
+class ModuleCreate(ModuleCredential):
+    """schemas untuk membuat module baru."""
 
     provider: EnumAPIProvider = Field(
         description="ini adalah provider api yang digunakan",
@@ -93,17 +94,20 @@ class AccountCreate(AccountCredential):
     )
 
     is_active: bool = Field(
-        description="ini adalah status aktif akun", json_schema_extra={"example": True}
+        description="ini adalah status aktif module",
+        json_schema_extra={"example": True},
     )
     # Optional Sections /Fields Metadata
     name: str | None = Field(
-        description="ini masukan nama asli akun pada account api provider anda.",
+        description="ini masukan nama asli module pada account api provider anda.",
         examples=["AFCell", "AFCel2", "AFCel3"],
     )
 
     description: str | None = Field(
-        description="ini adalah metada data atau deskripsi akun",
-        json_schema_extra={"example": "ini adalah akun utama transaksi, dan lain lain"},
+        description="ini adalah metada data atau deskripsi module",
+        json_schema_extra={
+            "example": "ini adalah module utama transaksi, dan lain lain"
+        },
     )
 
     @field_validator("provider", mode="before")
@@ -133,16 +137,23 @@ class AccountCreate(AccountCredential):
         return bool(v)
 
 
-class AccountRead(AccountCreate):
+class ModuleRead(ModuleCreate):
     pass
 
 
-class AccountList(BaseModel):
-    """schemas untuk list akun."""
+class ModuleList(BaseModel):
+    """schemas untuk list module."""
 
-    accounts: list[AccountRead] = Field(
-        description="ini adalah list akun yang tersedia",
+    modules: list[ModuleRead] = Field(
+        description="ini adalah list module yang tersedia",
         json_schema_extra={
-            "example": [{"accountid": "account1"}, {"accountid": "account2"}]
+            "example": [{"moduleid": "module1"}, {"moduleid": "module2"}]
         },
+    )
+
+
+class ModuleInDB(ModuleCreate):
+    created_at: datetime = Field(
+        description="Waktu pembuatan module dalam format datetime",
+        json_schema_extra={"example": "2023-01-01T00:00:00Z"},
     )
