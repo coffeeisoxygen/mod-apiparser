@@ -1,3 +1,5 @@
+# src/repos/user_repo.py
+
 from typing import Any
 
 import yaml
@@ -11,68 +13,59 @@ from src.exceptions.app_exceptions import AppException
 
 class UserRepository:
     def __init__(self):
-        # Ambil path dari settings yang sudah di-cache
         settings = get_settings()
         self.file_path = settings.path_users
         self._users: list[UserInDB] = []
-        self._load_users()
+        self.reload()
 
-    def _load_users(self):
-        """Memuat data dari file YAML dan memvalidasinya dengan skema UserInDB."""
-        # Tambahkan bind untuk melacak operasi ini
+    def _load_data_from_file(self) -> list[UserInDB]:
         operation_logger = logger.bind(operation="load_users_from_yaml")
-
         try:
             with open(self.file_path) as file:
                 data: dict[str, list[dict[str, Any]]] = yaml.safe_load(file)
-                if data and "users" in data:
-                    self._users = [UserInDB(**user_data) for user_data in data["users"]]
-                    operation_logger.debug(
-                        f"Berhasil memuat {len(self._users)} user dari file.",
-                        users_loaded=len(self._users),
-                    )
-                else:
-                    operation_logger.warning(
-                        "File users.yaml kosong atau tidak memiliki kunci 'users'."
-                    )
-        except FileNotFoundError as e:
+                if not data or "users" not in data:
+                    return []
+                users_list = [UserInDB(**user_data) for user_data in data["users"]]
+                operation_logger.debug(
+                    f"Successfully loaded {len(users_list)} users.",
+                    users_loaded=len(users_list),
+                )
+                return users_list
+        except (FileNotFoundError, ValidationError, Exception) as e:
             operation_logger.error(
-                "File users.yaml tidak ditemukan. Jalankan seeder terlebih dahulu.",
+                "Failed to load or validate YAML file.",
                 file=self.file_path,
+                exception=e,
             )
-            self._users = []
-            raise AppException.FileNotFoundError(
-                message="File users.yaml tidak ditemukan. Jalankan seeder terlebih dahulu.",
-                context={"file": self.file_path},
-            ) from e
-        except ValidationError as e:
-            operation_logger.error(
-                "Error validasi Pydantic saat memuat user.", error_details=e.errors()
-            )
-            self._users = []
-            raise AppException.UserActionError(
-                message="Error validasi Pydantic saat memuat user.",
-                context={"error_details": e.errors()},
-            ) from e
-        except Exception as e:
-            operation_logger.critical(
-                "Error tak terduga saat memuat data user.", exception=e
-            )
-            self._users = []
-            raise AppException.UserActionError(
-                message="Error tak terduga saat memuat data user.",
-                context={"exception": str(e)},
+            raise AppException.YamlReloadExceptionError(
+                message="An error occurred while loading or validating the YAML file.",
+                context={"error_details": str(e)},
             ) from e
 
+    def reload(self):
+        logger.info("Starting UserRepository reload process.")
+        try:
+            self._users = self._load_data_from_file()
+            logger.info("UserRepository successfully reloaded.")
+        except AppException.YamlReloadExceptionError as e:
+            logger.error(
+                "Failed to reload data, using old data.",
+                error=e.message,
+                context=e.context,
+            )
+        except Exception as e:
+            logger.error(
+                "Failed to reload data due to unexpected error, using old data.",
+                exception=e,
+            )
+
     def get_user_by_username(self, username: str) -> UserInDB | None:
-        """Mencari user di memori berdasarkan username."""
         for user in self._users:
             if user.username == username:
-                logger.debug("User ditemukan.", user=username)
+                logger.debug("User found.", user=username)
                 return user
-        logger.warning("User tidak ditemukan.", user=username)
+        logger.warning("User not found.", user=username)
         return None
 
     def get_all_users(self) -> list[UserInDB]:
-        """Mengembalikan semua user yang ada."""
         return self._users

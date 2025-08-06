@@ -24,3 +24,10 @@ class AppException:
         def __init__(self, message: str | None = None, context: dict | None = None):
             default_message = "Required file not found."
             super().__init__(404, message or default_message, context)
+
+    class YamlReloadExceptionError(BasExceptionError):
+        """Exception raised for errors during YAML file reload and validation."""
+
+        def __init__(self, message: str | None = None, context: dict | None = None):
+            default_message = "YAML reload or validation failed."
+            super().__init__(500, message or default_message, context)
