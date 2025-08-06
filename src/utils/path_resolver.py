@@ -2,8 +2,12 @@
 
 from pathlib import Path
 
-from mlogger import logger
 from src.exceptions.app_exceptions import AppException
+from src.mlogger import get_logger
+from src.mlogger.utils import log_error
+
+# Setup logger untuk module ini
+logger = get_logger(__name__)
 
 
 def ensure_file_and_folder(path: str | Path, placeholder: str) -> None:
@@ -21,25 +25,110 @@ def ensure_file_and_folder(path: str | Path, placeholder: str) -> None:
         AppException.PathResolverError: If the file or folder creation fails.
     """
     path = Path(path)
-    log = logger.bind(action="ensure_file", file=str(path))
+
+    # Bind context untuk tracking operasi file ini
+    bound_logger = logger.bind(
+        operation="ensure_file_and_folder",
+        file_path=str(path),
+        parent_folder=str(path.parent),
+    )
+
+    bound_logger.debug("Checking file and folder existence")
+
     try:
+        # Create parent directory if it doesn't exist
         if not path.parent.exists():
-            log.info(f"Creating folder {path.parent}")
+            bound_logger.info("Creating parent directory: {}", path.parent)
             path.parent.mkdir(parents=True, exist_ok=True)
+            bound_logger.success("Parent directory created successfully")
+        else:
+            bound_logger.debug("Parent directory already exists")
+
+        # Create file if it doesn't exist
         if not path.exists():
-            log.info("Creating file")
+            bound_logger.info("Creating file with placeholder content")
             path.write_text(placeholder)
+            bound_logger.success("File created successfully with placeholder content")
+        else:
+            bound_logger.debug("File already exists")
+
+    except PermissionError as e:
+        log_error(
+            error=e,
+            message="Permission denied while creating file or folder",
+            extra_context={
+                "file_path": str(path),
+                "parent_folder": str(path.parent),
+                "operation": "ensure_file_and_folder",
+            },
+        )
+        raise AppException.PathResolverError(
+            f"Permission denied: Cannot create file or folder {path}"
+        ) from e
+
+    except OSError as e:
+        log_error(
+            error=e,
+            message="OS error while creating file or folder",
+            extra_context={
+                "file_path": str(path),
+                "parent_folder": str(path.parent),
+                "operation": "ensure_file_and_folder",
+            },
+        )
+        raise AppException.PathResolverError(
+            f"OS error: Failed to create file or folder {path}"
+        ) from e
+
     except Exception as e:
-        log.exception(f"Failed to create file or folder: {e}")
+        log_error(
+            error=e,
+            message="Unexpected error while creating file or folder",
+            extra_context={
+                "file_path": str(path),
+                "parent_folder": str(path.parent),
+                "operation": "ensure_file_and_folder",
+                "placeholder_length": len(placeholder),
+            },
+        )
         raise AppException.PathResolverError(
             f"Failed to create file or folder {path}: {e}"
         ) from e
 
 
 def ensure_all_files(files: list[tuple[str | Path, str]]) -> None:
-    """Ensure that all specified files and their parent folders exist."""
+    """Ensure that all specified files and their parent folders exist.
+
+    Args:
+        files: List of tuples containing (file_path, placeholder_content)
+    """
+    logger.info("Starting batch file creation for {} files", len(files))
+
+    success_count = 0
+    error_count = 0
+
     for path, placeholder in files:
-        ensure_file_and_folder(path, placeholder)
+        try:
+            ensure_file_and_folder(path, placeholder)
+            success_count += 1
+        except Exception as e:
+            error_count += 1
+            # Gunakan log_error utility untuk error yang lebih comprehensive
+            log_error(
+                error=e,
+                message="Failed to ensure file in batch operation",
+                extra_context={
+                    "file_path": str(path),
+                    "batch_operation": "ensure_all_files",
+                },
+            )
 
-
-# resolver = PathResolver()
+    # Log summary
+    if error_count == 0:
+        logger.success("All {} files ensured successfully", success_count)
+    else:
+        logger.warning(
+            "Batch file creation completed: {} successful, {} failed",
+            success_count,
+            error_count,
+        )
