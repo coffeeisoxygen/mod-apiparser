@@ -45,7 +45,7 @@ async def info(app_parameters: AppConfig) -> AppConfig:
 @app.get("/terms", response_class=HTMLResponse)
 async def terms():
     """Get terms of service page.
-    
+
     Returns:
         HTMLResponse: Terms of service content in HTML format.
     """
