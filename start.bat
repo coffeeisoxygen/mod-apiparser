@@ -1,5 +1,5 @@
 @echo off
-set ENV_PATH=.env.example
+REM filepath:
 
 REM Step 0: Check if uv is installed
 uv --version >nul 2>nul
@@ -9,22 +9,34 @@ IF %ERRORLEVEL% NEQ 0 (
 )
 
 REM Step 1: Setup virtual env & sync
+echo [*] Setting up virtual environment...
 uv sync
 IF %ERRORLEVEL% NEQ 0 (
     echo [!] Failed to sync virtual environment.
     exit /b %ERRORLEVEL%
 )
 
-REM Step 2: Run env_checker (always run)
-uv run scripts/env_input.py
+REM Step 2: Run enhanced env setup (only if needed)
+echo [*] Checking environment configuration...
+uv run scripts/env_input.py show-info
+uv run scripts/env_input.py env-setup
 IF %ERRORLEVEL% NEQ 0 (
-    echo [!] env_checker.py failed.
+    echo [!] Environment setup failed.
     exit /b %ERRORLEVEL%
 )
 
-REM check apakah accounts.yaml sudah ada, jika belum buat,
-REM Step 3: Jalankan FastAPI in development mode
-uv run uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
+REM Step 3: Create secrets directory if not exists
+if not exist "secrets\keys" mkdir "secrets\keys"
 
-REM Untuk priduction mode, uncomment the following line:
-REM uv run uvicorn src.main:app --host 0.0.0.0 --port 8000 --workers 4
+REM Step 4: Set development environment (default)
+if not defined APP_ENV set APP_ENV=development
+
+REM Step 5: Start application based on environment
+echo [*] Starting application in %APP_ENV% mode...
+if "%APP_ENV%"=="production" (
+    echo [*] Starting in production mode...
+    uv run uvicorn src.main:app --host 0.0.0.0 --port 8000 --workers 4
+) else (
+    echo [*] Starting in development mode...
+    uv run uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
+)
