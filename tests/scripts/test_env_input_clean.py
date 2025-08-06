@@ -4,13 +4,11 @@ Test structure mirrors the source structure:
 - scripts/env_input.py -> tests/scripts/test_env_input.py
 """
 
-import base64
 import tempfile
 from pathlib import Path
 from unittest.mock import patch
 
 import pytest
-from cryptography.fernet import Fernet
 from scripts.env_input import app, create_base_env_content, generate_secure_keys
 from typer.testing import CliRunner
 
@@ -93,6 +91,9 @@ class TestKeyGeneration:
 
     def test_fernet_key_is_valid_base64(self):
         """Test that Fernet key is valid base64."""
+        import base64
+
+        from cryptography.fernet import Fernet
 
         keys = generate_secure_keys()
         fernet_key = keys["fernet_key"]
