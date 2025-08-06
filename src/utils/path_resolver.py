@@ -3,23 +3,20 @@
 from pathlib import Path
 
 from src.exceptions.app_exceptions import AppException
-from src.mlogger import get_logger
+from src.mlogger import logger
 from src.mlogger.utils import log_error
 
-# Setup logger untuk module ini
-logger = get_logger(__name__)
 
-
-def ensure_file_and_folder(path: str | Path, placeholder: str) -> None:
+def ensure_file_and_folder(path: str | Path, placeholder: str = "") -> None:
     """Ensure that a file and its parent folder exist.
 
     This function checks if the specified file and its parent directory exist.
     If the directory does not exist, it will be created. If the file does not
-    exist, it will be created with the provided placeholder content.
+    exist, it will be created with the provided placeholder content (or empty if not given).
 
     Args:
         path (str | Path): The path to the file.
-        placeholder (str): The placeholder content for the file.
+        placeholder (str, optional): The placeholder content for the file. Defaults to empty string.
 
     Raises:
         AppException.PathResolverError: If the file or folder creation fails.
@@ -46,9 +43,16 @@ def ensure_file_and_folder(path: str | Path, placeholder: str) -> None:
 
         # Create file if it doesn't exist
         if not path.exists():
-            bound_logger.info("Creating file with placeholder content")
-            path.write_text(placeholder)
-            bound_logger.success("File created successfully with placeholder content")
+            if placeholder:
+                bound_logger.info("Creating file with placeholder content")
+                path.write_text(placeholder)
+                bound_logger.success(
+                    "File created successfully with placeholder content"
+                )
+            else:
+                bound_logger.info("Creating empty file (no placeholder)")
+                path.touch()
+                bound_logger.success("Empty file created successfully")
         else:
             bound_logger.debug("File already exists")
 
@@ -88,7 +92,9 @@ def ensure_file_and_folder(path: str | Path, placeholder: str) -> None:
                 "file_path": str(path),
                 "parent_folder": str(path.parent),
                 "operation": "ensure_file_and_folder",
-                "placeholder_length": len(placeholder),
+                "placeholder_length": len(placeholder)
+                if placeholder is not None
+                else 0,
             },
         )
         raise AppException.PathResolverError(
@@ -100,14 +106,23 @@ def ensure_all_files(files: list[tuple[str | Path, str]]) -> None:
     """Ensure that all specified files and their parent folders exist.
 
     Args:
-        files: List of tuples containing (file_path, placeholder_content)
+        files: List of tuples containing (file_path, placeholder_content). If placeholder_content is omitted or None, file will be empty.
     """
     logger.info("Starting batch file creation for {} files", len(files))
 
     success_count = 0
     error_count = 0
 
-    for path, placeholder in files:
+    for entry in files:
+        # Support (path,) or (path, placeholder)
+        if isinstance(entry, (list, tuple)) and len(entry) == 2:
+            path, placeholder = entry
+        elif isinstance(entry, (list, tuple)) and len(entry) == 1:
+            path = entry[0]
+            placeholder = ""
+        else:
+            path = entry
+            placeholder = ""
         try:
             ensure_file_and_folder(path, placeholder)
             success_count += 1
