@@ -4,6 +4,8 @@ import yaml
 
 from src.dependencies.dep_settings import get_settings
 from src.domain.user.sch_user import UserInDB
+from src.mlogger import logger
+from src.mlogger.utils import log_error
 from src.service.hasher_service import HasherService
 
 DEFAULT_USERS = [
@@ -55,12 +57,26 @@ class SeederService:
 
     @staticmethod
     def _ensure_parent_dir(path: pathlib.Path) -> None:
+        log = logger.bind(operation="ensure_parent_dir", path=str(path))
         if not path.parent.exists():
-            path.parent.mkdir(parents=True, exist_ok=True)
+            try:
+                log.info("Creating parent directory: {}", path.parent)
+                path.parent.mkdir(parents=True, exist_ok=True)
+                log.success("Parent directory created successfully")
+            except Exception as e:
+                log_error(
+                    error=e,
+                    message="Failed to create parent directory",
+                    extra_context={"path": str(path), "parent": str(path.parent)},
+                )
+                raise
+        else:
+            log.debug("Parent directory already exists")
 
     def create_default_users(self):
         """Seed users file with default admin if not exists or empty."""
         path = self.path_users
+        log = logger.bind(operation="seed_users", path=str(path))
         if not path.exists() or path.stat().st_size == 0:
             self._ensure_parent_dir(path)
             users = []
@@ -71,20 +87,43 @@ class SeederService:
                     user_dict["password"]
                 )
                 users.append(user_dict)
-            with open(path, "w", encoding="utf-8") as f:
-                yaml.dump(
-                    {"users": users}, f, sort_keys=False, default_flow_style=False
+            try:
+                with open(path, "w", encoding="utf-8") as f:
+                    yaml.dump(
+                        {"users": users}, f, sort_keys=False, default_flow_style=False
+                    )
+                log.success("Seeded users file successfully")
+            except Exception as e:
+                log_error(
+                    error=e,
+                    message="Failed to write users file",
+                    extra_context={"path": str(path)},
                 )
+                raise
+        else:
+            log.debug("Users file already exists and is not empty")
 
     def create_default_modules(self):
         """Seed modules file with default modules if not exists or empty."""
         path = self.path_modules
+        log = logger.bind(operation="seed_modules", path=str(path))
         if not path.exists() or path.stat().st_size == 0:
             self._ensure_parent_dir(path)
-            with open(path, "w", encoding="utf-8") as f:
-                yaml.dump(
-                    {"modules": DEFAULT_MODULES},
-                    f,
-                    sort_keys=False,
-                    default_flow_style=False,
+            try:
+                with open(path, "w", encoding="utf-8") as f:
+                    yaml.dump(
+                        {"modules": DEFAULT_MODULES},
+                        f,
+                        sort_keys=False,
+                        default_flow_style=False,
+                    )
+                log.success("Seeded modules file successfully")
+            except Exception as e:
+                log_error(
+                    error=e,
+                    message="Failed to write modules file",
+                    extra_context={"path": str(path)},
                 )
+                raise
+        else:
+            log.debug("Modules file already exists and is not empty")
