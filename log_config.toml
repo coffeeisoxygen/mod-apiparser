@@ -4,22 +4,22 @@
 
 [mlog]
 # Global logging settings
-level = "INFO"
+level = "DEBUG"
 intercept = true  # Intercept standard library logging (uvicorn, etc.)
 exception_hooks = true  # Enable global exception hooks
 
 [mlog.terminal]
 # Terminal/console output configuration
 enabled = true
-level = "INFO"  # Can be different from global level
+level = "DEBUG"  # Can be different from global level
 format = "simple"  # Options: simple, full, minimal, custom
 colorize = true  # Enable colors in terminal
-diagnose = false  # Enable detailed diagnosis for terminalPsni
+diagnose = true  # Enable detailed diagnosis for terminal
 enqueue = true  # Async logging for better performance
 
 [mlog.file]
 # File logging configuration
-enabled = true
+enabled = false
 base_path = "logs"  # Base directory for all log files
 name_prefix = "app"  # Prefix for log filenames
 rotation_mb = 10  # Rotate when file reaches this size in MB

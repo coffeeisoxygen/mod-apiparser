@@ -27,7 +27,7 @@ class UserRepository:
                 data: dict[str, list[dict[str, Any]]] = yaml.safe_load(file)
                 if data and "users" in data:
                     self._users = [UserInDB(**user_data) for user_data in data["users"]]
-                    operation_logger.info(
+                    operation_logger.debug(
                         f"Berhasil memuat {len(self._users)} user dari file.",
                         users_loaded=len(self._users),
                     )

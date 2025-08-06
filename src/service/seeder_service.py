@@ -4,6 +4,7 @@ import yaml
 
 from src.dependencies.dep_settings import get_settings
 from src.domain.user.sch_user import UserInDB
+from src.exceptions.app_exceptions import AppException
 from src.mlogger import logger
 from src.mlogger.utils import log_error
 from src.service.hasher_service import HasherService
@@ -69,7 +70,9 @@ class SeederService:
                     message="Failed to create parent directory",
                     extra_context={"path": str(path), "parent": str(path.parent)},
                 )
-                raise
+                raise AppException.PathResolverError(
+                    str(e), context={"path": str(path), "parent": str(path.parent)}
+                ) from e
         else:
             log.debug("Parent directory already exists")
 
@@ -99,7 +102,9 @@ class SeederService:
                     message="Failed to write users file",
                     extra_context={"path": str(path)},
                 )
-                raise
+                raise AppException.PathResolverError(
+                    str(e), context={"path": str(path)}
+                ) from e
         else:
             log.debug("Users file already exists and is not empty")
 
@@ -124,6 +129,8 @@ class SeederService:
                     message="Failed to write modules file",
                     extra_context={"path": str(path)},
                 )
-                raise
+                raise AppException.PathResolverError(
+                    str(e), context={"path": str(path)}
+                ) from e
         else:
             log.debug("Modules file already exists and is not empty")
