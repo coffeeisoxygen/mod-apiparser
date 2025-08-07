@@ -31,3 +31,31 @@ class AppException:
         def __init__(self, message: str | None = None, context: dict | None = None):
             default_message = "YAML reload or validation failed."
             super().__init__(500, message or default_message, context)
+
+    class TokenServiceError(BasExceptionError):
+        """Base exception for token service errors."""
+
+        def __init__(self, message: str | None = None, context: dict | None = None):
+            default_message = "Token service error occurred."
+            super().__init__(500, message or default_message, context)
+
+    class TokenExpiredError(BasExceptionError):
+        """Token has expired."""
+
+        def __init__(self, message: str | None = None, context: dict | None = None):
+            default_message = "Token has expired."
+            super().__init__(401, message or default_message, context)
+
+    class TokenInvalidError(BasExceptionError):
+        """Token is invalid."""
+
+        def __init__(self, message: str | None = None, context: dict | None = None):
+            default_message = "Token is invalid."
+            super().__init__(401, message or default_message, context)
+
+    class AuthenticationError(BasExceptionError):
+        """Authentication failed."""
+
+        def __init__(self, message: str | None = None, context: dict | None = None):
+            default_message = "Authentication failed."
+            super().__init__(401, message or default_message, context)
