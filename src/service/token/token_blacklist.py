@@ -1,10 +1,14 @@
 """Token blacklist management for security."""
 
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 from src.config.settings import JWTConfig
 from src.domain.token.sch_token import TokenBlacklist
 from src.mlogger import get_logger
+
+if TYPE_CHECKING:
+    from src.repos.rep_token_blacklist import TokenBlacklistRepository
 
 logger = get_logger(__name__)
 
@@ -13,21 +17,32 @@ class TokenBlacklistManager:
     """Manages JWT token blacklisting for security.
 
     Provides functionality to blacklist tokens and check if tokens are blacklisted.
-    Currently uses in-memory storage but can be easily extended to use Redis or database.
+    Can use in-memory storage or persistent storage via TokenBlacklistRepository.
     """
 
-    def __init__(self, jwt_config: JWTConfig) -> None:
+    def __init__(
+        self,
+        jwt_config: JWTConfig,
+        blacklist_repo: "TokenBlacklistRepository | None" = None,
+    ) -> None:
         """Initialize blacklist manager.
 
         Args:
             jwt_config: JWT configuration from settings
+            blacklist_repo: Optional repository for persistent storage
         """
         self.config = jwt_config
-        self._blacklist: set[str] = set()
-        self._blacklist_entries: dict[str, TokenBlacklist] = {}
+        self.blacklist_repo = blacklist_repo
         self._enabled = jwt_config.blacklist_enabled
 
-        logger.info(f"TokenBlacklistManager initialized (enabled: {self._enabled})")
+        # In-memory storage - used when no repository is provided
+        self._blacklist: set[str] = set()
+        self._blacklist_entries: dict[str, TokenBlacklist] = {}
+
+        storage_type = "persistent" if blacklist_repo else "in-memory"
+        logger.info(
+            f"TokenBlacklistManager initialized (enabled: {self._enabled}, storage: {storage_type})"
+        )
 
     @property
     def enabled(self) -> bool:
@@ -57,7 +72,8 @@ class TokenBlacklistManager:
             logger.warning("Cannot blacklist token: JTI is empty")
             return
 
-        if jti in self._blacklist:
+        # Check if already blacklisted
+        if self.is_blacklisted(jti):
             logger.debug(f"Token already blacklisted: {jti}")
             return
 
@@ -70,8 +86,13 @@ class TokenBlacklistManager:
         )
 
         # Add to blacklist
-        self._blacklist.add(jti)
-        self._blacklist_entries[jti] = blacklist_entry
+        if self.blacklist_repo:
+            # Use repository for persistent storage
+            self.blacklist_repo.add_token(blacklist_entry)
+        else:
+            # Use in-memory storage
+            self._blacklist.add(jti)
+            self._blacklist_entries[jti] = blacklist_entry
 
         logger.info(
             "Token blacklisted",
@@ -96,7 +117,12 @@ class TokenBlacklistManager:
         if not jti:
             return False
 
-        is_blacklisted = jti in self._blacklist
+        if self.blacklist_repo:
+            # Check in repository
+            is_blacklisted = self.blacklist_repo.is_blacklisted(jti)
+        else:
+            # Check in-memory storage
+            is_blacklisted = jti in self._blacklist
 
         if is_blacklisted:
             logger.debug(f"Token is blacklisted: {jti}")

@@ -14,11 +14,18 @@ from src.service.token.token_blacklist import TokenBlacklistManager
 from src.service.token.token_service import TokenService
 from src.service.token.token_validator import TokenValidator
 
+# Optional import for blacklist repository
+try:
+    from src.repos.rep_token_blacklist import TokenBlacklistRepository
+except ImportError:
+    TokenBlacklistRepository = None
+
 logger = get_logger(__name__)
 
 # Global instances (singleton pattern)
 _key_manager: KeyManager | None = None
 _jwt_handler: JWTHandler | None = None
+_blacklist_repo = None  # Optional TokenBlacklistRepository
 _blacklist_manager: TokenBlacklistManager | None = None
 _token_validator: TokenValidator | None = None
 _token_service: TokenService | None = None
@@ -71,20 +78,37 @@ def get_jwt_handler(
     return _jwt_handler
 
 
+def get_blacklist_repository():
+    """Get or create optional TokenBlacklistRepository instance.
+
+    Returns:
+        TokenBlacklistRepository instance or None if not available
+    """
+    global _blacklist_repo
+    if _blacklist_repo is None and TokenBlacklistRepository is not None:
+        _blacklist_repo = TokenBlacklistRepository()
+        logger.info("TokenBlacklistRepository instance created")
+    return _blacklist_repo
+
+
 def get_blacklist_manager(
     jwt_config: Annotated[JWTConfig, Depends(get_jwt_config)],
+    blacklist_repo=Depends(get_blacklist_repository),  # type: ignore
 ) -> TokenBlacklistManager:
     """Get or create TokenBlacklistManager instance.
 
     Args:
         jwt_config: JWT configuration
+        blacklist_repo: Optional blacklist repository
 
     Returns:
         TokenBlacklistManager instance
     """
     global _blacklist_manager
     if _blacklist_manager is None:
-        _blacklist_manager = TokenBlacklistManager(jwt_config=jwt_config)
+        _blacklist_manager = TokenBlacklistManager(
+            jwt_config=jwt_config, blacklist_repo=blacklist_repo
+        )
         logger.info("TokenBlacklistManager instance created")
     return _blacklist_manager
 
