@@ -160,3 +160,11 @@ class UserUpdate(BaseModel):
             }
         }
     )
+
+
+# UserInDB      # Untuk seeding & database storage
+# UserRead      # Untuk response API (tanpa password)
+# UserReadList  # Untuk list response dengan pagination info
+# UserLogin     # Untuk login request
+# UserCreate    # Untuk create user request
+# UserUpdate    # Untuk update user request (partial)

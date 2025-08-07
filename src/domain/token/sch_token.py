@@ -20,7 +20,7 @@ class TokenPayload(BaseModel):
 
     # Custom Claims untuk aplikasi
     user_id: str | UUID = Field(..., description="ID user yang login")
-    username: str = Field(..., description="Username user")
+    username: str = Field(..., description="Username user tersebut")
     is_superuser: bool = Field(
         default=False, description="Apakah user adalah superuser"
     )
@@ -35,7 +35,7 @@ class TokenCreate(BaseModel):
     user_id: str | UUID = Field(..., description="ID user")
     username: str = Field(..., description="Username user")
     is_superuser: bool = Field(default=False, description="Status superuser")
-    token_type: str = Field(default="access_token", description="Tipe token")
+    token_type: str = Field(default="access_token", description="Tipe token yg dibuat")
 
     model_config = ConfigDict(json_encoders={UUID: str})
 
@@ -51,8 +51,8 @@ class TokenResponse(BaseModel):
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
-                "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-                "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVaCJ9...",
+                "refresh_token": "eyJhbGciOiJIUzI1NiIssInR5cCI6IkpXVCJ9...",
                 "token_type": "bearer",
                 "expires_in": 1800,
             }
@@ -66,7 +66,7 @@ class TokenData(BaseModel):
     user_id: str | UUID = Field(..., description="ID user")
     username: str = Field(..., description="Username user")
     is_superuser: bool = Field(default=False, description="Status superuser")
-    token_type: str = Field(..., description="Tipe token")
+    token_type: str = Field(..., description="Tipe token (access_token/refresh_token)")
     exp: datetime = Field(..., description="Waktu expired")
     iat: datetime = Field(..., description="Waktu issued")
 
