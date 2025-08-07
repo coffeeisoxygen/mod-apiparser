@@ -49,8 +49,8 @@ DEFAULT_MODULES = [
 class SeederService:
     def __init__(self):
         settings = get_settings()
-        self.path_users = pathlib.Path(settings.path_users)
-        self.path_modules = pathlib.Path(settings.path_modules)
+        self.path_users = pathlib.Path(settings.path_data) / "users.yaml"
+        self.path_modules = pathlib.Path(settings.path_data) / "modules.yaml"
 
     def seed(self):
         self.create_default_users()

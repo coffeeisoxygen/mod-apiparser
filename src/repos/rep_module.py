@@ -1,3 +1,4 @@
+import pathlib
 from typing import Any
 
 import yaml
@@ -8,11 +9,13 @@ from src.domain.module.sch_module import ModuleInDB
 from src.exceptions.app_exceptions import AppException
 from src.mlogger import logger
 
+module_path = pathlib.Path(get_settings().path_data) / "modules.yaml"
+
 
 class ModuleRepository:
     def __init__(self):
-        settings = get_settings()
-        self.file_path = settings.path_modules
+        logger.info("Initializing ModuleRepository with path: %s", module_path)
+        self.file_path = module_path
         self._modules: list[ModuleInDB] = []
         self.reload()
 

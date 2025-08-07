@@ -1,5 +1,6 @@
 # src/repos/user_repo.py
 
+import pathlib
 from typing import Any
 
 import yaml
@@ -10,11 +11,13 @@ from src.domain.user.sch_user import UserInDB
 from src.exceptions.app_exceptions import AppException
 from src.mlogger import logger
 
+user_path = pathlib.Path(get_settings().path_data) / "users.yaml"
+
 
 class UserRepository:
     def __init__(self):
-        settings = get_settings()
-        self.file_path = settings.path_users
+        logger.info("Initializing UserRepository with path: %s", user_path)
+        self.file_path = user_path
         self._users: list[UserInDB] = []
         self.reload()
 

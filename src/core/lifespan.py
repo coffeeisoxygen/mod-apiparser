@@ -34,11 +34,18 @@ async def lifespan(app):  # noqa: ANN001, RUF029
     app.state.user_repo = user_repo
     module_repo = ModuleRepository()
     app.state.module_repo = module_repo
+
     # 3. Inisialisasi dan jalankan watcher service
-    user_file_path = pathlib.Path(settings.path_users)
-    watcher = FileWatcher(file_path=user_file_path, callback=user_repo.reload)
-    watcher.start()
-    app.state.watcher = watcher
+    user_file_path = pathlib.Path(settings.path_data) / "users.yaml"
+    module_file_path = pathlib.Path(settings.path_data) / "modules.yaml"
+    user_watcher = FileWatcher(file_path=user_file_path, callback=user_repo.reload)
+    module_watcher = FileWatcher(
+        file_path=module_file_path, callback=module_repo.reload
+    )
+    user_watcher.start()
+    module_watcher.start()
+    app.state.user_watcher = user_watcher
+    app.state.module_watcher = module_watcher
 
     yield  # Aplikasi siap menerima permintaan
 
