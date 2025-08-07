@@ -1,4 +1,5 @@
 import pathlib
+import uuid
 
 import yaml
 
@@ -11,6 +12,7 @@ from src.service.hasher_service import HasherService
 
 DEFAULT_USERS = [
     {
+        "id": str(uuid.uuid4()),
         "username": "admin",
         "password": "admin123",
         "name": "Administrator",
@@ -19,6 +21,7 @@ DEFAULT_USERS = [
         "is_superuser": True,
     },
     {
+        "id": str(uuid.uuid4()),
         "username": "user1",
         "password": "user123",
         "name": "User One",
