@@ -62,8 +62,7 @@ class JWTConfig(BaseModel):
 class PathConfig(BaseModel):
     """File paths configuration."""
 
-    users: str
-    modules: str
+    data: str
     keys: str
 
 
@@ -129,8 +128,7 @@ class Settings(BaseSettings):
     jwt_cookie_samesite: str = Field(default="lax", alias="JWT_COOKIE_SAMESITE")
 
     # Path Settings
-    path_users: str = Field(default="secrets/users.yaml", alias="PATH_USERS")
-    path_modules: str = Field(default="secrets/modules.yaml", alias="PATH_MODULES")
+    path_data: str = Field(default="secrets/data", alias="PATH_DATA")
     path_keys: str = Field(default="secrets/keys", alias="PATH_KEYS")
 
     @property
@@ -177,9 +175,7 @@ class Settings(BaseSettings):
     @property
     def paths(self) -> PathConfig:
         """Get paths configuration."""
-        return PathConfig(
-            users=self.path_users, modules=self.path_modules, keys=self.path_keys
-        )
+        return PathConfig(data=self.path_data, keys=self.path_keys)
 
     @property
     def jwt_key_file_path(self) -> Path:
